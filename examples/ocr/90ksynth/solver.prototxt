@@ -1,0 +1,17 @@
+net: "models/90ksynth_v2/train_val.prototxt"
+test_iter: 400
+test_interval: 1000
+base_lr: 0.01
+lr_policy: "step"
+gamma: 0.2
+#stepsize: 20000
+stepsize: 40000
+display: 10
+#max_iter: 70000
+max_iter: 140000
+momentum: 0.9
+#weight_decay: 0.0001
+weight_decay: 0.0
+snapshot: 1000
+snapshot_prefix: "models/90ksynth_v2/90ksynth_v2_v00"
+solver_mode: GPU
