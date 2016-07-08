@@ -315,27 +315,41 @@ bool ReadXMLToAnnotatedDatum(const string& labelfile, const int img_height,
           int ymin = pt2.get("ymin", 0);
           int xmax = pt2.get("xmax", 0);
           int ymax = pt2.get("ymax", 0);
+
           CHECK_NOTNULL(anno);
+
+
+          // Clip
+          if (xmin > width) xmin = width;
+          if (ymin > height) ymin = height;
+          if (xmax > width) xmax = width;
+          if (ymax > height) ymax = height;
+          if (xmin < 0) xmin = 0;
+          if (ymin < 0) ymin = 0;
+          if (xmax < 0) xmax = 0;
+          if (ymax < 0) ymax = 0;
+
           LOG_IF(WARNING, xmin > width) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. xmin " << xmin << " > width " << width;
           LOG_IF(WARNING, ymin > height) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. ymin " << ymin << " > height " << height;
           LOG_IF(WARNING, xmax > width) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. xmax " << xmax << " > width " << width;
           LOG_IF(WARNING, ymax > height) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. ymax " << ymax << " > height " << height;
           LOG_IF(WARNING, xmin < 0) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. xmin " << xmin << " < 0";
           LOG_IF(WARNING, ymin < 0) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. ymin " << ymin << " < 0";
           LOG_IF(WARNING, xmax < 0) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. xmax " << xmax << " < 0";
           LOG_IF(WARNING, ymax < 0) << labelfile <<
-              " bounding box exceeds image boundary.";
+              " bounding box exceeds image boundary. ymax " << ymax << " < 0";
           LOG_IF(WARNING, xmin > xmax) << labelfile <<
               " bounding box irregular.";
           LOG_IF(WARNING, ymin > ymax) << labelfile <<
               " bounding box irregular.";
+
           // Store the normalized bounding box.
           NormalizedBBox* bbox = anno->mutable_bbox();
           bbox->set_xmin(static_cast<float>(xmin) / width);
@@ -424,26 +438,39 @@ bool ReadJSONToAnnotatedDatum(const string& labelfile, const int img_height,
     float xmax = bbox_items[0] + bbox_items[2];
     float ymax = bbox_items[1] + bbox_items[3];
     CHECK_NOTNULL(anno);
+
+    // Clip
+    if (xmin > width) xmin = width;
+    if (ymin > height) ymin = height;
+    if (xmax > width) xmax = width;
+    if (ymax > height) ymax = height;
+    if (xmin < 0) xmin = 0;
+    if (ymin < 0) ymin = 0;
+    if (xmax < 0) xmax = 0;
+    if (ymax < 0) ymax = 0;
+
     LOG_IF(WARNING, xmin > width) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. xmin " << xmin << " > width " << width;
     LOG_IF(WARNING, ymin > height) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. ymin " << ymin << " > height " << height;
     LOG_IF(WARNING, xmax > width) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. xmax " << xmax << " > width " << width;
     LOG_IF(WARNING, ymax > height) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. ymax " << ymax << " > height " << height;
     LOG_IF(WARNING, xmin < 0) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. xmin " << xmin << " < 0";
     LOG_IF(WARNING, ymin < 0) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. ymin " << ymin << " < 0";
     LOG_IF(WARNING, xmax < 0) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. xmax " << xmax << " < 0";
     LOG_IF(WARNING, ymax < 0) << labelfile <<
-        " bounding box exceeds image boundary.";
+        " bounding box exceeds image boundary. ymax " << ymax << " < 0";
+
     LOG_IF(WARNING, xmin > xmax) << labelfile <<
         " bounding box irregular.";
     LOG_IF(WARNING, ymin > ymax) << labelfile <<
         " bounding box irregular.";
+
     // Store the normalized bounding box.
     NormalizedBBox* bbox = anno->mutable_bbox();
     bbox->set_xmin(xmin / width);

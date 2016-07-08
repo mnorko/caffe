@@ -344,7 +344,31 @@ void DetectionOutputLayer<Dtype>::Forward_cpu(
             cur_det.put<float>("score", conf_scores[label][idx]);
 
             detections_.push_back(std::make_pair("", cur_det));
+          } else if (output_format_ == "COCOVOC") {
+            boost::property_tree::ptree xmin, ymin, width, height;
+            xmin.put<float>("", round(scale_bbox.xmin() * 100) / 100.);
+            ymin.put<float>("", round(scale_bbox.ymin() * 100) / 100.);
+            width.put<float>("",
+                round((scale_bbox.xmax() - scale_bbox.xmin()) * 100) / 100.);
+            height.put<float>("",
+                round((scale_bbox.ymax() - scale_bbox.ymin()) * 100) / 100.);
+
+            boost::property_tree::ptree cur_bbox;
+            cur_bbox.push_back(std::make_pair("", xmin));
+            cur_bbox.push_back(std::make_pair("", ymin));
+            cur_bbox.push_back(std::make_pair("", width));
+            cur_bbox.push_back(std::make_pair("", height));
+
+            boost::property_tree::ptree cur_det;
+            cur_det.put<int>("image_id", atoi(names_[name_count_].c_str()));
+            cur_det.put<int>("category_id",
+                label);
+            cur_det.add_child("bbox", cur_bbox);
+            cur_det.put<float>("score", conf_scores[label][idx]);
+
+            detections_.push_back(std::make_pair("", cur_det));
           }
+       
         }
         ++count;
       }
@@ -356,6 +380,21 @@ void DetectionOutputLayer<Dtype>::Forward_cpu(
       ++name_count_;
       if (name_count_ % num_test_image_ == 0) {
         if (output_format_ == "COCO") {
+          boost::filesystem::path output_directory(output_directory_);
+          boost::filesystem::path file(output_name_prefix_ + ".json");
+          boost::filesystem::path out_file = output_directory / file;
+          std::ofstream outfile;
+          outfile.open(out_file.string().c_str(), std::ofstream::out);
+
+          boost::regex exp("\"(null|true|false|-?[0-9]+(\\.[0-9]+)?)\"");
+          boost::property_tree::ptree output;
+          output.add_child("detections", detections_);
+          std::stringstream ss;
+          write_json(ss, output);
+          std::string rv = boost::regex_replace(ss.str(), exp, "$1");
+          outfile << rv.substr(rv.find("["), rv.rfind("]") - rv.find("["))
+              << std::endl << "]" << std::endl;
+        } else if (output_format_ == "COCOVOC") {
           boost::filesystem::path output_directory(output_directory_);
           boost::filesystem::path file(output_name_prefix_ + ".json");
           boost::filesystem::path out_file = output_directory / file;

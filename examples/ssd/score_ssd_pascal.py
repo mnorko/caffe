@@ -49,7 +49,7 @@ def AddExtraLayers(net, use_batchnorm=True):
 caffe_root = os.getcwd()
 
 # Set true if you want to start training right after generating all files.
-run_soon = True
+run_soon = False
 
 # The database file for training data. Created by data/VOC0712/create_data.sh
 train_data = "examples/VOC0712/VOC0712_trainval_lmdb"
@@ -194,7 +194,7 @@ model_name = "VGG_VOC0712_{}".format(job_name)
 # Directory which stores the model .prototxt file.
 save_dir = "models/VGGNet/VOC0712/{}_score".format(job_name)
 # Directory which stores the snapshot of trained models.
-snapshot_dir = "models/VGGNet/VOC0712/{}".format(job_name)
+snapshot_dir = "/Users/marissac/caffe/models/VGGNet/VOC0712/{}".format(job_name)
 # Directory which stores the job script and log file.
 job_dir = "jobs/VGGNet/VOC0712/{}_score".format(job_name)
 # Directory which stores the detection results.
