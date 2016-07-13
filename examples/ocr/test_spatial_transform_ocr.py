@@ -30,6 +30,48 @@ from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 import cv2
 
+CAFFE_LABEL_TO_CHAR_MAP = {
+    0: '0',
+    1: '1',
+    2: '2',
+    3: '3',
+    4: '4',
+    5: '5',
+    6: '6',
+    7: '7',
+    8: '8',
+    9: '9',
+    10: 'a',
+    11: 'b',
+    12: 'c',
+    13: 'd',
+    14: 'e',
+    15: 'f',
+    16: 'g',
+    17: 'h',
+    18: 'i',
+    19: 'j',
+    20: 'k',
+    21: 'l',
+    22: 'm',
+    23: 'n',
+    24: 'o',
+    25: 'p',
+    26: 'q',
+    27: 'r',
+    28: 's',
+    29: 't',
+    30: 'u',
+    31: 'v',
+    32: 'w',
+    33: 'x',
+    34: 'y',
+    35: 'z',
+    36: ' ',
+    37: '\0',
+    38: '\0'
+}
+
 model_def = '/Users/marissac/caffe/examples/ocr/90ksynth/deploy_ocr_spatial_transform.prototxt'
 model_weights = '/Users/marissac/caffe/examples/ocr/90ksynth/90ksynth_v2_v00_iter_140000.caffemodel'
 
@@ -50,7 +92,7 @@ transformer.set_mean('data', np.array([mean_val])/256.0)
 
 
 ct = coco_text.COCO_Text('/Users/marissac/data/coco/annotations/COCO_Text.json')
-imgNumTest = 28392
+imgNumTest = 151934
 img = ct.loadImgs(imgNumTest)[0]
 
 dataDir='/Users/marissac/data/coco'
@@ -92,6 +134,20 @@ for k in range(0,num_bboxes):
 
 net.blobs['theta'].data[...] = theta
 net.forward()    
+
+output = net.blobs['reshape'].data
+words_final = []
+for k in range(0,num_bboxes):
+    text_out = np.reshape(output[k,:,:,:],(39,23))
+    text_max = np.argmax(text_out, axis=0) 
+    output_word = ''
+    for j in range(0,23):
+        output_word = output_word + CAFFE_LABEL_TO_CHAR_MAP[text_max[j]-1]
+        
+    words_final.append(output_word)
+    img_transform = net.blobs['data_transform'].data[k,0,:,:]
+    plt.figure(k)
+    plt.imshow(img_transform)
 #imgTemp = np.zeros((height_input,width_input))
 #loc_digit = np.array([[10,20],[52,20]]) # box x location, box y location
 #num_detections = 2

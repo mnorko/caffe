@@ -51,7 +51,7 @@ def get_labelname(labelmap, labels):
     return labelnames
     
 model_def = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/test.prototxt'
-model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_SSD_300x300_iter_140000.caffemodel'
+model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_SSD_300x300_multiclass_corr_iter_204000.caffemodel'
 
 net = caffe.Net(model_def,      # defines the structure of the model
                 model_weights,  # contains the trained weights
@@ -65,7 +65,7 @@ transformer.set_raw_scale('data', 255)  # the reference model operates on images
 transformer.set_channel_swap('data', (2,1,0))  # the reference model has channels in BGR order instead of RGB'
 
 numClasses = 1
-numTest = 1000
+numTest = 1
 for k in range(0, numTest):
     if k % 10 == 0:
         print 'Step ' + repr(k) +'\n'

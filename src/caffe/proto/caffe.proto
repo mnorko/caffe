@@ -576,6 +576,7 @@ message ResizeParameter {
     WARP = 1;
     FIT_SMALL_SIZE = 2;
     FIT_LARGE_SIZE_AND_PAD = 3;
+    RESIZE_AND_PAD = 4;
   }
   optional Resize_mode resize_mode = 2 [default = WARP];
   optional uint32 height = 3 [default = 0];

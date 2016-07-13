@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 30 11:02:27 2016
+Created on Wed Jul 13 09:52:46 2016
 
 @author: marissac
 """
@@ -28,14 +28,13 @@ import caffe
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 
-model_def = '/Users/marissac/caffe/examples/spatial_transformer/solver.prototxt'
-#net_def = '/Users/marissac/caffe/examples/spatial_transformer/train_st_cnn.prototxt'
-net_def = '/Users/marissac/caffe/examples/mnist/lenet_train_test_spatial_transform.prototxt'
-#solver = caffe.SGDSolver(model_def)
-net = caffe.Net(net_def,caffe.TRAIN)
+model_def = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/solver.prototxt'
+model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_legibleSplit_SSD_300x300_iter_60000.caffemodel'
+
+solver = caffe.SGDSolver(model_def)
+solver.net.copy_from(model_weights)
+#net = caffe.Net(model_def,model_weights,caffe.TRAIN)
 
 #solver.step(1)
-net.forward()
+solver.step(1)
 
-
-net.backward()

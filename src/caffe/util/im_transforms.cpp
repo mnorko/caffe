@@ -205,6 +205,19 @@ cv::Mat AspectKeepingResizeAndPad(const cv::Mat& in_img,
   return img_resized;
 }
 
+cv::Mat ResizeAndPad(const cv::Mat& in_img,
+                                  const int new_width, const int new_height,
+                                  const int pad_type,  const cv::Scalar pad_val) {
+  cv::Mat img_resized;
+  int height = floor(static_cast<float>(in_img.cols));
+  int width = floor(static_cast<float>(in_img.rows));
+
+  cv::copyMakeBorder(in_img, img_resized, 0, new_width-width, 0,
+                       new_height - height,
+                       pad_type, pad_val);
+  return img_resized;
+}
+
 cv::Mat AspectKeepingResizeBySmall(const cv::Mat& in_img,
                                    const int new_width,
                                    const int new_height,
@@ -298,6 +311,12 @@ void UpdateBBoxByResizePolicy(const ResizeParameter& param,
       y_min = std::max(0.f, y_min * new_height / old_height);
       y_max = std::min(new_height, y_max * new_height / old_height);
       break;
+    case ResizeParameter_Resize_mode_RESIZE_AND_PAD:
+      x_min = x_min * new_width;
+      x_max = x_max * new_width;
+      y_min = y_min * new_height;
+      y_max = y_max * new_height;
+      break;
     default:
       LOG(FATAL) << "Unknown resize mode.";
   }
@@ -385,6 +404,10 @@ cv::Mat ApplyResize(const cv::Mat& in_img, const ResizeParameter& param) {
     case ResizeParameter_Resize_mode_FIT_SMALL_SIZE:
       out_img = AspectKeepingResizeBySmall(in_img, new_width, new_height,
                                            interp_mode);
+      break;
+    case ResizeParameter_Resize_mode_RESIZE_AND_PAD:
+      out_img = ResizeAndPad(in_img, new_width, new_height,
+                                          pad_mode, pad_val);
       break;
     default:
       LOG(INFO) << "Unknown resize mode.";

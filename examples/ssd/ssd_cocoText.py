@@ -54,9 +54,9 @@ resume_training = True
 remove_old_models = False
 
 # The database file for training data. Created by data/VOC0712/create_data.sh
-train_data = "examples/coco/coco_combo_train2014_final_lmdb"
+train_data = "examples/coco/coco_combo_leglibe_train2014_final_lmdb"
 # The database file for testing data. Created by data/VOC0712/create_data.sh
-test_data = "examples/coco/coco_combo_val2014_final_lmdb"
+test_data = "examples/coco/coco_combo_legible_val2014_final_lmdb"
 # Specify the batch sampler.
 resize_width = 300
 resize_height = 300
@@ -220,7 +220,7 @@ pretrain_model = "models/VGGNet/VGG_ILSVRC_16_layers_fc_reduced.caffemodel"
 label_map_file = "data/coco/labelmap_cocoText.prototxt"
 
 # MultiBoxLoss parameters.
-num_classes = 82
+num_classes = 83
 share_location = True
 background_label_id=0
 train_on_diff_gt = True
@@ -478,12 +478,12 @@ with open(solver_file, 'w') as f:
 
 max_iter = 0
 # Find most recent snapshot.
-for file in os.listdir(snapshot_dir):
-  if file.endswith(".solverstate"):
-    basename = os.path.splitext(file)[0]
-    iter = int(basename.split("{}_iter_".format(model_name))[1])
-    if iter > max_iter:
-      max_iter = iter
+#for file in os.listdir(snapshot_dir):
+#  if file.endswith(".solverstate"):
+#    basename = os.path.splitext(file)[0]
+#    iter = int(basename.split("{}_iter_".format(model_name))[1])
+#    if iter > max_iter:
+#      max_iter = iter
 
 train_src_param = '--weights="{}" \\\n'.format(pretrain_model)
 if resume_training:

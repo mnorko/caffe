@@ -8,7 +8,7 @@ input_shape {
 }
 input: "theta"
 input_shape {
-  dim: 6
+  dim: 3
   dim: 6
 }
 layer {
@@ -20,7 +20,7 @@ layer {
   python_param {
     module: "spatialTransformerMulti"
     layer: "SpatialTransformerMultiLayer"
-    param_str: "{'transform_type': 'affine','sampler_type': 'bilinear', 'output_H': 32, 'output_W':100, 'num_detections':6}"
+    param_str: "{'transform_type': 'affine','sampler_type': 'bilinear', 'output_H': 32, 'output_W':100, 'num_detections':3}"
   }
 }
 layer {

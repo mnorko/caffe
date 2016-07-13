@@ -30,13 +30,15 @@ from caffe.proto import caffe_pb2
 model_def = '/Users/marissac/caffe/examples/spatial_transformer/deploy_lenet_spatial_transform.prototxt'
 model_weights = '/Users/marissac/caffe/examples/mnist/lenet_iter_10000.caffemodel'
 
+model_test = '/Users/marissac/caffe/examples/ocr/test_data_read.prototxt'
+
 
 net = caffe.Net(model_def,      # defines the structure of the model
                 model_weights,  # contains the trained weights
                 caffe.TEST)     # use test mode (e.g., don't perform dropout)
                 
-#net_test = caffe.Net(model_test,caffe.TEST)
-#net_test.forward()
+net_test = caffe.Net(model_test,caffe.TEST)
+net_test.forward()
                 
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 transformer.set_raw_scale('data', 1/255)

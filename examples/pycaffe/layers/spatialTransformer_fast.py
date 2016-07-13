@@ -9,7 +9,7 @@ import caffe
 import numpy as np
 import yaml
 
-class SpatialTransformerLayer(caffe.Layer):
+class SpatialTransformerFastLayer(caffe.Layer):
     """
     Transform an input using the transformation parameters computed by the 
     localization network. This requires the creation of a mesh grid, a 
@@ -370,40 +370,65 @@ def compute_dTheta(img,x,y,out_size,theta,top_diff):
         grid_mult_y  = np.zeros((theta.shape[1],output_combo))
         grid_mult_y[3:6,:] = grid[k,0:3,:]
         
-        for n in range(0,H):
-            for m in range(0,W):
+        w_vals = range(0,W)
+        h_vals = range(0,H)
+        
+        # Find all the x and y values close to this location
+        x_sub = np.expand_dims(x_batch,1)- w_vals # The result of this should be output_combo x W
+        y_sub = np.expand_dims(y_batch,1) - h_vals # The result of this should be ouput_combo x H
+        
+        x_vals = np.clip(1-abs(x_sub),0,1000)
+        y_vals = np.clip(1-abs(y_sub),0,1000)
+        
+        # Find where the values of abs(m-x_batch) > 1
+        mult_val_y = np.clip(-y_sub,-1, 1)
+        mult_val_y = np.sign(mult_val_y)
+        
+        mult_val_x = np.clip(-x_sub,-1, 1)
+        mult_val_x = np.sign(mult_val_x)
+        
+        abs_y = abs(-y_sub)
+        abs_x = abs(-x_sub)
+        
+        large_state_y = np.where(abs_y>=1)
+        mult_val_y[large_state_y] = 0
+        
+        large_state_x = np.where(abs_x>=1)
+        mult_val_x[large_state_x] = 0
+        
+        # Create tensors with the values of y_vals,x_vals, mult_val_x, and mult_val_y for easy multiplication
+        # We want each tensor to have the size output_comboxHxW
+        x_vals_tensor = np.repeat(np.expand_dims(x_vals,1),H,axis =1)
+        mult_val_x_tensor = np.repeat(np.expand_dims(mult_val_x,1),H,axis =1)
+        
+        y_vals_tensor = np.repeat(np.expand_dims(y_vals,2),W,axis =2)
+        mult_val_y_tensor = np.repeat(np.expand_dims(mult_val_y,2),W,axis =2)
+        
+        dx_tensor = np.multiply(y_vals_tensor,mult_val_x_tensor)
+        dy_tensor = np.multiply(x_vals_tensor,mult_val_y_tensor)
+        
+        for c_idx in range(0,C):
+            top_derv = top_diff[k,c_idx,:,:]
+            top_derv = np.reshape(top_derv,-1)
+            
+            top_derv_tensor = np.repeat(np.expand_dims(top_derv,1),H,axis = 1)
+            top_derv_tensor = np.repeat(np.expand_dims(top_derv_tensor,2),W,axis = 2)
+            
+            dx_tensor = np.multiply(top_derv_tensor,dx_tensor)
+            dy_tensor = np.multiply(top_derv_tensor,dy_tensor)
+            
+            img_tensor = np.repeat(np.expand_dims(img[k,c_idx,:,:],0),output_combo,axis = 0)
+            
+            dx_tensor_total = np.multiply(dx_tensor,img_tensor)
+            dy_tensor_total = np.multiply(dy_tensor,img_tensor)
+            
+            dx_tensor_total = np.reshape(dx_tensor_total,(output_combo,H*W))
+            dy_tensor_total = np.reshape(dy_tensor_total,(output_combo,H*W))
+            
+            
+            dx_total = dx_total + np.sum(dx_tensor_total,axis=1)
+            dy_total = dy_total + np.sum(dy_tensor_total,axis=1)
 
-                # Find all the x and y values close to this location
-                x_vals = np.clip(1-abs(x_batch-m),0,1000)
-                y_vals = np.clip(1-abs(y_batch-n),0,1000)
-                
-                mult_val_x = np.clip(m-x_batch,-1, 1)
-                mult_val_x = np.sign(mult_val_x)
-                mult_val_y = np.clip(n-y_batch,-1, 1)
-                mult_val_y = np.sign(mult_val_y)
-                
-                # Find where the values of abs(m-x_batch) > 1
-                abs_x = abs(m-x_batch)
-                large_state_x = np.where(abs_x>=1)
-                mult_val_x[large_state_x] = 0
-                abs_y = abs(n-y_batch)
-                large_state_y = np.where(abs_y>=1)
-                mult_val_y[large_state_y] = 0
-                
-                dx = np.multiply(y_vals,mult_val_x)
-                dy = np.multiply(x_vals,mult_val_y)
-
-                
-                for c_idx in range(0,C):
-                    # Multiply the derivative by dE/dV from the layer above
-                    top_derv = top_diff[k,c_idx,:,:]
-                    top_derv = np.reshape(top_derv,-1)
-                    
-                    dx = np.multiply(top_derv,dx)
-                    dy = np.multiply(top_derv,dy)
-                    
-                    dx_total = dx_total + dx*img[k,c_idx,n,m]
-                    dy_total = dy_total + dy*img[k,c_idx,n,m]
         
         dx_total = dx_total*(H-1)/2
         dy_total = dy_total*(W-1)/2
