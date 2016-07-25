@@ -2,7 +2,7 @@
 name: "test_on_train"
 input: "data"
 input_shape {
-  dim: 1
+  dim: 40
   dim: 1
   dim: 32
   dim: 100

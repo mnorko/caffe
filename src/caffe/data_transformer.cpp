@@ -299,6 +299,9 @@ void DataTransformer<Dtype>::TransformAnnotation(
           Annotation* transformed_anno =
               transformed_anno_group.add_annotation();
           transformed_anno->set_instance_id(anno.instance_id());
+          transformed_anno->set_char_label(anno.char_label());
+          transformed_anno->set_img_height(anno.img_height());
+          transformed_anno->set_img_width(anno.img_width());
           NormalizedBBox* transformed_bbox = transformed_anno->mutable_bbox();
           transformed_bbox->CopyFrom(proj_bbox);
           if (do_mirror) {

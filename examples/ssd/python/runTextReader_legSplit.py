@@ -245,7 +245,7 @@ for img_idx in range(imgStart,imgStart+numImgTest):
     
     detect_tic = time.time()
     
-    #detection_read= detect_read_ssd.ssd_detect_box(image,net, transformer,confidence_threshold = thresh_use,image_resize = 300,multiclass_flag = 1,text_class = 81)
+    #detection_read= detect_read_ssd.ssd_detect_box(image,net, transformer,confidence_threshold = thresh_use,image_resize = 300,multiclass_flag = 1,text_class = 81,text_class2 = 82)
     detection_read= ssd_detect_box(image,net, transformer,confidence_threshold = thresh_use,image_resize = 300,multiclass_flag = 1,text_class = 81,text_class2 = 82)
     #= ssd_detect_box(image,net, transformer,confidence_threshold = thresh_use,image_resize = 300,multiclass_flag = 1,text_class = 81)
 
@@ -257,8 +257,8 @@ for img_idx in range(imgStart,imgStart+numImgTest):
     detection_cocoText.imgToAnns[imgUse] = list(np.linspace(annStart,annStart+num_detect-1,num_detect))
     num_detect_total.append(num_detect)
     read_tic = time.time()
-    detection_read = detect_read_ssd.synth_read_words(image,detection_read,CAFFE_LABEL_TO_CHAR_MAP,net_synth, synth_transformer)
-    #detection_read = synth_read_words(image,detection_read,CAFFE_LABEL_TO_CHAR_MAP,net_synth, synth_transformer)
+    #detection_read = detect_read_ssd.synth_read_words(image,detection_read,CAFFE_LABEL_TO_CHAR_MAP,net_synth, synth_transformer)
+    detection_read = synth_read_words(image,detection_read,CAFFE_LABEL_TO_CHAR_MAP,net_synth, synth_transformer)
     read_toc = time.time()
     read_time.append(read_toc-read_tic)
     for i in range(0,num_detect):
@@ -281,14 +281,3 @@ with open('detection_cocoText_anns_' + repr(imgStart+numImgTest) + '_legible.pic
     
 with open('detection_cocoText_imgToAnns_' + repr(imgStart+numImgTest) + '_legible.pickle','wb') as f:
     pickle.dump(detection_cocoText.imgToAnns,f)
-## Check how we're doing compared to ground truth
-#true_detections = detection_img['true_positives']
-#num_true_detect = len(true_detections)
-#for i in range(0,num_true_detect):
-#
-#    # Check if ground truth is legible and english
-#    gtAnnInfo = ct.loadAnns(true_detections[i]['gt_id'])
-#    if (gtAnnInfo[0]['language'] == 'english') & (gtAnnInfo[0]['legibility'] == 'legible'):
-#        # Get the bounding box associated with the detection
-#        detect_id = true_detections[i]['eval_id']  
-#        detection_cocoText.anns[detect_id]['utf8_string'] = output_word.strip()

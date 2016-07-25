@@ -96,9 +96,9 @@ def parse_score_logs(foldername):
  
  
 root_dir = "/Users/marissac/caffe"
-output_plot_name = root_dir + "/examples/ssd/jobs/VGGNet/cocoText/SSD_300x300/results/test.png"
-train_log = root_dir + "/examples/ssd/jobs/VGGNet/cocoText/SSD_300x300/VGG_cocoText_SSD_300x300.log"
-foldername = root_dir + "/examples/ssd/jobs/VGGNet/cocoText/SSD_300x300/test_logs"
+output_plot_name = root_dir + "/examples/ssd/jobs/VGGNet/cocoText/SSD_300x300/results/cocoText_legibleSplit_testErr"
+train_log = root_dir + "/examples/ssd/jobs/VGGNet/cocoText/SSD_300x300/VGG_cocoText_legibleSplit_SSD_300x300_full.log"
+foldername = "/Users/marissac/Code/text_reading/ssd/jobs/cocoText/SSD_300x300/test_logs_legible"
   
 train_loss, train_iters, test_det, test_iters_bad, max_iter = parse_train_loss(train_log)
 detection_eval, test_loss, test_iters = parse_score_logs(foldername)
@@ -119,7 +119,7 @@ fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 ax1.plot(train_iters, train_loss, '.', color='skyblue', label='training loss')
 ax2.plot(test_iters, detection_eval, 'ro', label='Detection eval mAP')
-#ax1.plot(test_iters, test_loss, 'go', label='Test Loss')
+ax1.plot(test_iters, test_loss, 'go', label='Test Loss')
 ax1.plot(train_iters_running, train_running_avg_loss, 'b.', label='train running avg loss')
  
 ax1.set_xlabel('Iteration * 10^3')

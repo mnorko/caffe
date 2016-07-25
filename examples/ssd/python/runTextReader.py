@@ -170,7 +170,7 @@ text_format.Merge(str(file.read()), coco_labelmap)
 model_def = '/Users/marissac/caffe/models/VGGNet/cocoText/SSD_300x300/deploy_digitIn_multiclass_legibleSplit.prototxt'
 #model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_SSD_300x300_multiclass_iter_120000.caffemodel'
 #model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_SSD_300x300_multiclass_corr_iter_204000.caffemodel'
-model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_legibleSplit_SSD_300x300_iter_60000.caffemodel'
+model_weights = '/Users/marissac/caffe/examples/ssd/models/VGGNet/cocoText/SSD_300x300/VGG_cocoText_legibleSplit_SSD_300x300_iter_185000.caffemodel'
 net = caffe.Net(model_def,      # defines the structure of the model
                 model_weights,  # contains the trained weights
                 caffe.TEST)     # use test mode (e.g., don't perform dropout)
@@ -227,7 +227,7 @@ elif load_results_flag == 0:
     imgStart = 0
     imgIdsTotal = []
 
-numImgTest = 20
+numImgTest = 500
 thresh_use = 0.14
 detect_time = []
 read_time = []

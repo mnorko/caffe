@@ -132,6 +132,9 @@ message NormalizedBBox {
 message Annotation {
   optional int32 instance_id = 1 [default = 0];
   optional NormalizedBBox bbox = 2;
+  optional string char_label = 3;
+  optional int32 img_height = 4;
+  optional int32 img_width = 5;
 }
 
 // Group of annotations for a particular label.
@@ -484,6 +487,7 @@ message LayerParameter {
   // The default for the engine is set by the ENGINE switch at compile-time.
   optional AccuracyParameter accuracy_param = 102;
   optional AnnotatedDataParameter annotated_data_param = 200;
+  optional AnnotatedWordDataParameter annotated_word_data_param = 208;
   optional ArgMaxParameter argmax_param = 103;
   optional BatchNormParameter batch_norm_param = 139;
   optional BiasParameter bias_param = 141;
@@ -697,6 +701,13 @@ message AccuracyParameter {
 }
 
 message AnnotatedDataParameter {
+  // Define the sampler.
+  repeated BatchSampler batch_sampler = 1;
+  // Store label name and label id in LabelMap format.
+  optional string label_map_file = 2;
+}
+
+message AnnotatedWordDataParameter {
   // Define the sampler.
   repeated BatchSampler batch_sampler = 1;
   // Store label name and label id in LabelMap format.

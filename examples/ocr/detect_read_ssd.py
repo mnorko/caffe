@@ -11,7 +11,7 @@ import math
 
 
 
-def ssd_detect_box(image,caffe_net=None, caffe_transformer=None,confidence_threshold = 0.22,image_resize = 300,multiclass_flag = 1,text_class = 73):
+def ssd_detect_box(image,caffe_net=None, caffe_transformer=None,confidence_threshold = 0.22,image_resize = 300,multiclass_flag = 1,text_class = 81,text_class2 = 82):
     # Set up network and transform image
     caffe_net.blobs['data'].reshape(1,3,image_resize,image_resize)
     transformed_image = caffe_transformer.preprocess('data',image)
@@ -29,7 +29,7 @@ def ssd_detect_box(image,caffe_net=None, caffe_transformer=None,confidence_thres
     det_ymax = detections_out[0,0,:,6]
     
     if multiclass_flag == 1:
-        class_indices = [i for i, label in enumerate(det_label) if label == text_class]
+        class_indices = [i for i, label in enumerate(det_label) if ((label == text_class) | (label == text_class2))]
         det_conf = det_conf[class_indices]
         det_xmin = det_xmin[class_indices]
         det_ymin = det_ymin[class_indices]
