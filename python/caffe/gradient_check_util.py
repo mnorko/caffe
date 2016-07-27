@@ -19,8 +19,8 @@ class GradientChecker:
         pass
 
     def get_obj_and_gradient(self, layer, top, top_id, top_data_id):
-        for b in top:
-            b.diff[...] = 0
+#        for b in top:
+#            b.diff[...] = 0
         loss_weight = 2
         loss = top[top_id].data.flat[top_data_id] * loss_weight
         top[top_id].diff.flat[top_data_id] = loss_weight
@@ -95,6 +95,7 @@ class GradientChecker:
         layer.SetUp(bottom, top)
         assert len(top) > 0
         for i in xrange(len(top)):
+        #for i in range(0,1):
             for j in xrange(top[i].count):
                 self.check_gradient_single(
                     layer, bottom, top, check_bottom, i, j)

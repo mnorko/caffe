@@ -126,7 +126,7 @@ net_combo = caffe.Net(model_combo,combo_weights,caffe.TEST)
 
 
 net_combo.forward()    
-net_combo.backward()   
+#net_combo.backward()   
 #solver.step(1)              
 #net_synth.blobs['data'].data[...] = net_combo.blobs['data_transform'].data
 #
@@ -155,21 +155,21 @@ net_combo.backward()
 #    if max(abs(net_diff)) != 0.0:
 #        print reader_keys[k]
 
-#output = net_combo.blobs['reshape'].data
-#words_final = []
-#for k in range(0,output.shape[0]):
-#    text_out = np.reshape(output[k,:,:,:],(39,23))
-#    text_max = np.argmax(text_out, axis=0) 
-#    output_word = ''
-#    for j in range(0,23):
-#        output_word = output_word + CAFFE_LABEL_TO_CHAR_MAP[text_max[j]-1]
-#        
-#    words_final.append(output_word)
+output = net_combo.blobs['reshape'].data
+words_final = []
+for k in range(0,output.shape[0]):
+    text_out = np.reshape(output[k,:,:,:],(39,23))
+    text_max = np.argmax(text_out, axis=0) 
+    output_word = ''
+    for j in range(0,23):
+        output_word = output_word + CAFFE_LABEL_TO_CHAR_MAP[text_max[j]-1]
+        
+    words_final.append(output_word)
 ####    img_transform = net.blobs['data_transform'].data[k,0,:,:]
 ####    plt.figure(k)
 ####    plt.imshow(img_transform)
-#    
-#data_out = net_combo.blobs['data_transform'].data 
-#for k in range(45,60):
-#    plt.figure(k)
-#    plt.imshow(data_out[k,0,:,:])
+    
+data_out = net_combo.blobs['data_transform'].data 
+for k in range(45,60):
+    plt.figure(k)
+    plt.imshow(data_out[k,0,:,:])

@@ -18,15 +18,15 @@ class TestGradientChecker():
 
     def setUp(self):
         self.bottom = dict()
-        shape = [2,1,20,20]
+        shape = [1,1,20,20]
         pred = caffe.Blob(shape)
         theta_shape = [2,6]
         label = caffe.Blob(theta_shape)
         self.rng = np.random.RandomState(313)
         pred.data[...] = self.rng.randn(*shape)
-        #label.data[...] = np.array([0.5,0.1,0.1,0.1,0.5,0.1])
+        #label.data[...] = np.array([0.99,0,0,0,0.99,0])
         label.data[...] = np.array([[0.99,0,0,0,0.99,0],[0.99,0,0,0,0.99,0]])
-        print label.data
+
         self.bottom[0] =pred
         self.bottom[1] = label
         self.top = [caffe.Blob([])]
@@ -36,8 +36,8 @@ class TestGradientChecker():
     def test_euclidean(self):
         lp = caffe_pb2.LayerParameter()
         lp.type = "Python"
-        lp.python_param.module = "spatialTransformer_fast"
-        lp.python_param.layer = "SpatialTransformerFastLayer"
+        lp.python_param.module = "spatialTransformerMulti"
+        lp.python_param.layer = "SpatialTransformerMultiLayer"
         lp.python_param.param_str = "{'output_H': 2, 'output_W': 4, 'num_detections': 2}"
         layer = caffe.create_layer(lp)
         layer.SetUp(self.bottom, self.top)
@@ -49,7 +49,7 @@ class TestGradientChecker():
         #self.assertAlmostEqual(float(self.top[0].data), loss, 5)
         checker = GradientChecker(1e-5, 3e-2)
         checker.check_gradient_exhaustive(
-            layer, self.bottom, self.top, check_bottom='all')
+            layer, self.bottom, self.top, check_bottom=[0])
 
 #    def test_inner_product(self):
 #        lp = caffe_pb2.LayerParameter()

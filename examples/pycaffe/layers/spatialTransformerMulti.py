@@ -179,7 +179,7 @@ def interpolate(img,x,y,out_size,num_detect):
     
     Output
     ------
-    interp_image: interpolated image [num_batch x num_channels x output_height x output_width]
+    interp_image: interpolated image [num_batch*max_matches x num_channels x output_height x output_width]
     
     The interpolation in the spatial transformer multi layer needs to make sure to keep track of images appropriately
     """
@@ -279,6 +279,7 @@ def interpolate(img,x,y,out_size,num_detect):
 #        print np.multiply(img_1_1,w1_1) 
         img_sum = np.multiply(img_0_0,w0_0) + np.multiply(img_0_1,w0_1) + np.multiply(img_1_0,w1_0) + np.multiply(img_1_1,w1_1) 
         interp_image[k,:,:,:] = np.reshape(img_sum,[C,out_height,out_width])
+        
         #print interp_image
     #print interp_image.shape
     return interp_image
@@ -372,81 +373,99 @@ def compute_dTheta(img,x,y,out_size,theta,top_diff,num_detect):
     
     total_derivative = np.zeros((N,theta.shape[1]))
     for k in range(0,N):
-        
-        x_batch = x[output_combo*k:output_combo*(k+1)]
-        y_batch = y[output_combo*k:output_combo*(k+1)]
-        dx_total = np.zeros(x_batch.shape)
-        dy_total = np.zeros(y_batch.shape)
-        
-        grid_mult_x= np.zeros((theta.shape[1],output_combo))
-        grid_mult_x[0:3,:] = grid[k,0:3,:]
-        
-        grid_mult_y  = np.zeros((theta.shape[1],output_combo))
-        grid_mult_y[3:6,:] = grid[k,0:3,:]
-        
-        w_vals = range(0,W)
-        h_vals = range(0,H)
-        
-        # Find all the x and y values close to this location
-        x_sub = np.expand_dims(x_batch,1)- w_vals # The result of this should be output_combo x W
-        y_sub = np.expand_dims(y_batch,1) - h_vals # The result of this should be ouput_combo x H
-        
-        x_vals = np.clip(1-abs(x_sub),0,1000)
-        y_vals = np.clip(1-abs(y_sub),0,1000)
-        
-        # Find where the values of abs(m-x_batch) > 1
-        mult_val_y = np.clip(-y_sub,-1, 1)
-        mult_val_y = np.sign(mult_val_y)
-        
-        mult_val_x = np.clip(-x_sub,-1, 1)
-        mult_val_x = np.sign(mult_val_x)
-        
-        abs_y = abs(-y_sub)
-        abs_x = abs(-x_sub)
-        
-        large_state_y = np.where(abs_y>=1)
-        mult_val_y[large_state_y] = 0
-        
-        large_state_x = np.where(abs_x>=1)
-        mult_val_x[large_state_x] = 0
-        
-        # Create tensors with the values of y_vals,x_vals, mult_val_x, and mult_val_y for easy multiplication
-        # We want each tensor to have the size output_comboxHxW
-        x_vals_tensor = np.repeat(np.expand_dims(x_vals,1),H,axis =1)
-        mult_val_x_tensor = np.repeat(np.expand_dims(mult_val_x,1),H,axis =1)
-        
-        y_vals_tensor = np.repeat(np.expand_dims(y_vals,2),W,axis =2)
-        mult_val_y_tensor = np.repeat(np.expand_dims(mult_val_y,2),W,axis =2)
-        
-        dx_tensor = np.multiply(y_vals_tensor,mult_val_x_tensor)
-        dy_tensor = np.multiply(x_vals_tensor,mult_val_y_tensor)
-        
-        for c_idx in range(0,C):
-            top_derv = top_diff[k,c_idx,:,:]
-            top_derv = np.reshape(top_derv,-1)
+        if np.all(top_diff[k,:,:,:]== 0) != True:
+            x_batch = x[output_combo*k:output_combo*(k+1)]
+            y_batch = y[output_combo*k:output_combo*(k+1)]
+            dx_total = np.zeros(x_batch.shape)
+            dy_total = np.zeros(y_batch.shape)
             
-            top_derv_tensor = np.repeat(np.expand_dims(top_derv,1),H,axis = 1)
-            top_derv_tensor = np.repeat(np.expand_dims(top_derv_tensor,2),W,axis = 2)
+            grid_mult_x= np.zeros((theta.shape[1],output_combo))
+            grid_mult_x[0:3,:] = grid[k,0:3,:]
             
-            dx_tensor = np.multiply(top_derv_tensor,dx_tensor)
-            dy_tensor = np.multiply(top_derv_tensor,dy_tensor)
+            grid_mult_y  = np.zeros((theta.shape[1],output_combo))
+            grid_mult_y[3:6,:] = grid[k,0:3,:]
             
-            img_idx = k/num_detect
+            w_vals = range(0,W)
+            h_vals = range(0,H)
             
-            img_tensor = np.repeat(np.expand_dims(img[img_idx,c_idx,:,:],0),output_combo,axis = 0)
+            # Find all the x and y values close to this location
+            x_sub = np.expand_dims(x_batch,1)- w_vals # The result of this should be output_combo x W
+            y_sub = np.expand_dims(y_batch,1) - h_vals # The result of this should be ouput_combo x H
             
-            dx_tensor_total = np.multiply(dx_tensor,img_tensor)
-            dy_tensor_total = np.multiply(dy_tensor,img_tensor)
+            x_vals = np.clip(1-abs(x_sub),0,1000)
+            y_vals = np.clip(1-abs(y_sub),0,1000)
             
-            dx_tensor_total = np.reshape(dx_tensor_total,(output_combo,H*W))
-            dy_tensor_total = np.reshape(dy_tensor_total,(output_combo,H*W))
+            # Find where the values of abs(m-x_batch) > 1
+            mult_val_y = np.clip(-y_sub,-1, 1)
+            mult_val_y = np.sign(mult_val_y)
             
+            mult_val_x = np.clip(-x_sub,-1, 1)
+            mult_val_x = np.sign(mult_val_x)
             
-            dx_total = dx_total + np.sum(dx_tensor_total,axis=1)
-            dy_total = dy_total + np.sum(dy_tensor_total,axis=1)
-
-        
-        dx_total = dx_total*(H-1)/2
-        dy_total = dy_total*(W-1)/2
-        total_derivative[k,:] = np.dot(grid_mult_x,dx_total) + np.dot(grid_mult_y,dy_total)      
+            abs_y = abs(-y_sub)
+            abs_x = abs(-x_sub)
+    
+            del x_sub
+            del y_sub
+            
+            large_state_y = np.where(abs_y>=1)
+            mult_val_y[large_state_y] = 0
+            
+            large_state_x = np.where(abs_x>=1)
+            mult_val_x[large_state_x] = 0
+    
+            del abs_x
+            del abs_y
+            del large_state_x
+            del large_state_y
+            
+            # Create tensors with the values of y_vals,x_vals, mult_val_x, and mult_val_y for easy multiplication
+            # We want each tensor to have the size output_comboxHxW
+            x_vals = np.repeat(np.expand_dims(x_vals,1),H,axis =1)
+            mult_val_x = np.repeat(np.expand_dims(mult_val_x,1),H,axis =1)
+            
+            y_vals = np.repeat(np.expand_dims(y_vals,2),W,axis =2)
+            mult_val_y= np.repeat(np.expand_dims(mult_val_y,2),W,axis =2)
+            
+            dx_tensor = np.multiply(y_vals,mult_val_x)
+            dy_tensor = np.multiply(x_vals,mult_val_y)
+    
+            del x_vals
+            del y_vals
+            del mult_val_x
+            del mult_val_y
+            
+            for c_idx in range(0,C):
+                top_derv_tensor = top_diff[k,c_idx,:,:]
+                top_derv_tensor = np.reshape(top_derv_tensor,-1)
+                
+                top_derv_tensor = np.repeat(np.expand_dims(top_derv_tensor,1),H,axis = 1)
+                top_derv_tensor = np.repeat(np.expand_dims(top_derv_tensor,2),W,axis = 2)
+                
+                dx_tensor = np.multiply(top_derv_tensor,dx_tensor)
+                dy_tensor = np.multiply(top_derv_tensor,dy_tensor)
+                
+                del top_derv_tensor
+    
+                img_idx = k/num_detect
+                
+                img_tensor = np.repeat(np.expand_dims(img[img_idx,c_idx,:,:],0),output_combo,axis = 0)
+                
+                dx_tensor_total = np.multiply(dx_tensor,img_tensor)
+                dy_tensor_total = np.multiply(dy_tensor,img_tensor)
+                
+                dx_tensor_total = np.reshape(dx_tensor_total,(output_combo,H*W))
+                dy_tensor_total = np.reshape(dy_tensor_total,(output_combo,H*W))
+                
+                
+                dx_total = dx_total + np.sum(dx_tensor_total,axis=1)
+                dy_total = dy_total + np.sum(dy_tensor_total,axis=1)
+    
+                del img_tensor
+                del dx_tensor_total
+                del dy_tensor_total
+            
+            dx_total = dx_total*(H-1)/2
+            dy_total = dy_total*(W-1)/2
+            total_derivative[k,:] = np.dot(grid_mult_x,dx_total) + np.dot(grid_mult_y,dy_total)      
     return total_derivative

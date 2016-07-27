@@ -52,7 +52,7 @@ conf_data = net.blobs['mbox_conf'].data
 num_classes = conf_data.shape[1]/num_priors
 num_batch = loc_data.shape[0]
 max_matches = 20
-overlap_threshold = 0.4
+overlap_threshold = 0.5
 
 # Retrieve bounding boxes from the ground truth boxes
 all_gt_bboxes, gt_batch_id = multibox_util.getGroundTruth(gt_data,num_gt,num_batch)
@@ -73,8 +73,8 @@ all_conf_scores = np.reshape(conf_data,(num_batch,num_priors,num_classes))
 match_indices_final = np.zeros((num_batch_use ,max_matches))
 match_gt_indices_final = np.zeros((num_batch_use ,max_matches))
 pred_box_final = np.zeros((num_batch_use ,4,max_matches))
-encode_gt_bboxes_final = np.zeros((num_batch_use ,4*max_matches))
-loc_data_final = np.zeros((num_batch_use ,4*max_matches))
+#encode_gt_bboxes_final = np.zeros((num_batch_use ,4*max_matches))
+#loc_data_final = np.zeros((num_batch_use ,4*max_matches))
 batch_idx_use = []
 batch_count = 0
 # Find matches between the predictions and ground truth boxes
@@ -89,26 +89,33 @@ for i in range(0,num_batch):
         # Subselect the labels that give all the ground truth information
         batch_labels = multibox_util.selectLabels(gt_data,match_gt_indices,gt_batch_id[i])
         # Subselect the confidences to send to the confidence loss layer
-        #conf_match_scores = multibox_util.subselectConf(all_conf_scores[i,:,:],match_indices)
+        conf_match_scores = multibox_util.subselectConf(all_conf_scores[i,:,:],match_indices)
         # Encode the ground truth bboxes to they can be compared to the mbox_loc data
-        #encode_gt_bboxes = multibox_util.encodeBBoxes(prior_bboxes,prior_variances,all_gt_bboxes[i],match_gt_indices,match_indices)
+        encode_gt_bboxes = multibox_util.encodeBBoxes(prior_bboxes,prior_variances,all_gt_bboxes[i],match_gt_indices,match_indices)
         # Reshape and select mbox_loc data that can be output to the localization loss layer
-        #loc_data_all = np.reshape(loc_data[i,:],(num_priors,4))
-        #loc_data_subselect = loc_data_all[match_indices,:] # After this line, loc_data_subselect is max_matchesx4
+        loc_data_all = np.reshape(loc_data[i,:],(num_priors,4))
+        good_indices = np.where(match_indices!=-1)
+        match_indices_cut = np.int32(match_indices[good_indices])
+        loc_data_subselect = loc_data_all[match_indices_cut,:] # After this line, loc_data_subselect is max_matchesx4
         #loc_data_subselect = np.reshape(loc_data_subselect,[-1])
         
         # Accumulate the data for each batch
         pred_box_final[batch_count,:,:] = pred_final_bboxes
         match_indices_final[batch_count,:] = match_indices
         match_gt_indices_final[batch_count,:] = match_gt_indices
+        
         #encode_gt_bboxes_final[batch_count,:] = encode_gt_bboxes[:,0]
         #loc_data_final[batch_count,:] = loc_data_subselect
         if batch_count == 0:
             labels_final = batch_labels
-           # conf_final = conf_match_scores
+            conf_final = conf_match_scores
+            loc_data_final = loc_data_subselect
+            encode_gt_bboxes_final = encode_gt_bboxes
         else:
             labels_final = np.concatenate((labels_final,batch_labels),axis = 0)
-            #conf_final = np.concatenate((conf_final,conf_match_scores),axis = 0)
+            conf_final = np.concatenate((conf_final,conf_match_scores),axis = 0)
+            loc_data_final = np.concatenate((loc_data_final,loc_data_subselect),axis = 0)
+            encode_gt_bboxes_final = np.concatenate((encode_gt_bboxes_final,encode_gt_bboxes),axis=0)
             
         batch_idx_use.append(i)
         batch_count = batch_count +1
@@ -170,20 +177,20 @@ net_word.blobs['data'].data[...] = img_output
 net_word.forward()      
 
 
-colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-img_num = 0
-img_use = net.blobs['data'].data[img_num,1,:,:]
-plt.figure()
-plt.imshow(img_use)
-currentAxis = plt.gca()
-pred_num = 0
-for k in range(0,6):
-    xmin = int(round(pred_box_final[pred_num,0,k,0]*300))
-    ymin = int(round(pred_box_final[pred_num,1,k,0]*300))
-    xmax = int(round(pred_box_final[pred_num,2,k,0]*300))
-    ymax = int(round(pred_box_final[pred_num,3,k,0]*300))
-    coords = (xmin, ymin), xmax-xmin+1, ymax-ymin+1
-    color = colors[k % len(colors)]
-    name = '%d'%k
-    currentAxis.add_patch(plt.Rectangle(*coords, fill=False, edgecolor=color, linewidth=2))
-    currentAxis.text(xmin, ymin, name, bbox={'facecolor':'white', 'alpha':0.5})
+#colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+#img_num = 0
+#img_use = net.blobs['data'].data[img_num,1,:,:]
+#plt.figure()
+#plt.imshow(img_use)
+#currentAxis = plt.gca()
+#pred_num = 0
+#for k in range(0,6):
+#    xmin = int(round(pred_box_final[pred_num,0,k,0]*300))
+#    ymin = int(round(pred_box_final[pred_num,1,k,0]*300))
+#    xmax = int(round(pred_box_final[pred_num,2,k,0]*300))
+#    ymax = int(round(pred_box_final[pred_num,3,k,0]*300))
+#    coords = (xmin, ymin), xmax-xmin+1, ymax-ymin+1
+#    color = colors[k % len(colors)]
+#    name = '%d'%k
+#    currentAxis.add_patch(plt.Rectangle(*coords, fill=False, edgecolor=color, linewidth=2))
+#    currentAxis.text(xmin, ymin, name, bbox={'facecolor':'white', 'alpha':0.5})

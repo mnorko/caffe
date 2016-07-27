@@ -21,7 +21,7 @@ layer {
   }
   data_param {
     source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
-    batch_size: 5
+    batch_size: 10
     backend: LMDB
   }
   annotated_data_param {
@@ -53,7 +53,7 @@ layer {
   }
   data_param {
     source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
-    batch_size: 5
+    batch_size: 10
     backend: LMDB
   }
   annotated_data_param {
@@ -1607,7 +1607,7 @@ layer {
   python_param {
     module: "multiboxRoutingLayer"
     layer: "MultiboxRoutingLayer"
-    param_str: "{'max_matches': 2,'overlap_threshold': 0.4}"
+    param_str: "{'max_matches': 15,'overlap_threshold': 0.5}"
   }
 }
 layer {
@@ -1635,7 +1635,7 @@ layer {
   python_param {
     module: "spatialTransformerMulti"
     layer: "SpatialTransformerMultiLayer"
-    param_str: "{'transform_type': 'affine','sampler_type': 'bilinear', 'output_H': 32, 'output_W':100, 'num_detections':2}"
+    param_str: "{'transform_type': 'affine','sampler_type': 'bilinear', 'output_H': 32, 'output_W':100, 'num_detections':15}"
   }
 }
 layer {
@@ -3457,6 +3457,10 @@ layer{
   top: "conf_loss"
   propagate_down: true
   propagate_down: false
+  loss_param {
+    ignore_label: -1
+
+  }
 
 }
 
@@ -3481,4 +3485,8 @@ layer {
   propagate_down: true
   propagate_down: false
   loss_weight: 0.34
+  loss_param {
+    ignore_label: -1
+
+  }
 }

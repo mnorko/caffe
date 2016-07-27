@@ -48,16 +48,16 @@ class MultiboxRoutingLayer(caffe.Layer):
         
         Paremters
         ---------
-        top: [0] - pred_box_final - bounding boxes for each image [num_batch_used x 4 x num_possible_matches x 1]
+        top: [0] - pred_box_final - bounding boxes for each image [num_batch_used x 4 x max_matches x 1]
              [1] - conf_final - confidence scores in all of the classes [num_batch_used*max_matches x num_classes]
-             [2] - loc_data_final - contains bounding box information in a different format than pred_box_final - this goes to the localization outut [num_batches_used x 4*max_matches x 1 x1]
+             [2] - loc_data_final - contains bounding box information in a different format than pred_box_final - this goes to the localization outut [num_batches_used*num_matches_used x 4]
              [3] - labels_final - contains ground truth information about bbox and the words - sent to word reader part of the net [num_batch_used*max_matchs x 33]
              [4] - class_labels - contains the true label for each ground truth detection - in this case, all of the values should be the label for legible text [num_batches_used*max_matches]
-             [5] - encode_gt_bboxes_final - this contains the ground truth bounding box data encoded so it can be compared to the mbox_loc_data - sent to localization loss layer [num_batches_used x (4*max_matches)]
+             [5] - encode_gt_bboxes_final - this contains the ground truth bounding box data encoded so it can be compared to the mbox_loc_data - sent to localization loss layer [num_batches_used*num_matches_used x 4]
         bottom: [0] - mbox_loc input [num_batches x (num_priorbox*4)] the four coordinates represnt xmin,ymin,xmax,ymax
                 [1] - mbox_conf input [num_batches x (num_priorbox*num_classes)] 
                 [2] - mbox_priorbox input [1 x 2 x (num_priorbox*4)] where the dimension with 2 represents location in one column and variance in the other
-                [3] - label [1 x 1 x num_gt_detects x 31] - the 31 coords represent [item_id, group_label, instance_id, xmin, ymin, xmax, ymax, diff, img_height, img_width, 23 characers for word] 
+                [3] - label [1 x 1 x num_gt_detects x 33] - the 31 coords represent [item_id, group_label, instance_id, xmin, ymin, xmax, ymax, diff, img_height, img_width, 23 characers for word] 
         """
         params = yaml.load(self.param_str)
         max_matches = params["max_matches"]
@@ -98,8 +98,8 @@ class MultiboxRoutingLayer(caffe.Layer):
         match_indices_final = np.zeros((num_batch_used ,max_matches))
         match_gt_indices_final = np.zeros((num_batch_used ,max_matches))
         pred_box_final = np.zeros((num_batch_used ,4,max_matches))
-        encode_gt_bboxes_final = np.zeros((num_batch_used ,4*max_matches))
-        loc_data_final = np.zeros((num_batch_used ,4*max_matches))
+        #encode_gt_bboxes_final = np.zeros((num_batch_used ,4*max_matches))
+        #loc_data_final = np.zeros((num_batch_used ,4*max_matches))
         batch_idx_use = []
         batch_count = 0
         # Find matches between the predictions and ground truth boxes
@@ -109,7 +109,7 @@ class MultiboxRoutingLayer(caffe.Layer):
                 loc_bboxes = multibox_util.decodeBBoxes(prior_bboxes,prior_variances,all_loc_preds[i])
                 # Find the predicted bounding boxes that match the ground truth and high confidence predictions
                 match_indices, match_gt_indices, match_overlaps =multibox_util.createBBoxMatchSet(all_gt_bboxes[i],loc_bboxes,all_max_scores[i,:],overlap_threshold,max_matches)
-                # Subselect the predicted bboxes which represent where the objects are in the real image            
+                # Subselect the predicted bboxes which represent where the objects are in the real image        
                 pred_final_bboxes = multibox_util.subselectBBoxes(loc_bboxes,match_indices)
                 # Subselect the labels that give all the ground truth information
                 batch_labels = multibox_util.selectLabels(gt_data,match_gt_indices,gt_batch_id[i])
@@ -119,25 +119,32 @@ class MultiboxRoutingLayer(caffe.Layer):
                 encode_gt_bboxes = multibox_util.encodeBBoxes(prior_bboxes,prior_variances,all_gt_bboxes[i],match_gt_indices,match_indices)
                 # Reshape and select mbox_loc data that can be output to the localization loss layer
                 loc_data_all = np.reshape(loc_data[i,:],(num_priors,4))
-                loc_data_subselect = loc_data_all[match_indices,:] # After this line, loc_data_subselect is max_matchesx4
-                loc_data_subselect = np.reshape(loc_data_subselect,[-1])
+                good_indices = np.where(match_indices!=-1)
+                match_indices_cut = np.int32(match_indices[good_indices])
+                loc_data_subselect = loc_data_all[match_indices_cut,:] # After this line, loc_data_subselect is max_matchesx4
+                #loc_data_subselect = np.reshape(loc_data_subselect,[-1])
                 
                 # Accumulate the data for each batch
                 pred_box_final[batch_count,:,:] = pred_final_bboxes
                 match_indices_final[batch_count,:] = match_indices
                 match_gt_indices_final[batch_count,:] = match_gt_indices
-                encode_gt_bboxes_final[batch_count,:] = encode_gt_bboxes[:,0]
-                loc_data_final[batch_count,:] = loc_data_subselect
+                #encode_gt_bboxes_final[batch_count,:] = encode_gt_bboxes[:,0]
+                #loc_data_final[batch_count,:] = loc_data_subselect
                 if batch_count == 0:
                     labels_final = batch_labels
                     conf_final = conf_match_scores
+                    loc_data_final = loc_data_subselect
+                    encode_gt_bboxes_final = encode_gt_bboxes
                 else:
                     labels_final = np.concatenate((labels_final,batch_labels),axis = 0)
                     conf_final = np.concatenate((conf_final,conf_match_scores),axis = 0)
+                    loc_data_final = np.concatenate((loc_data_final,loc_data_subselect),axis = 0)
+                    encode_gt_bboxes_final = np.concatenate((encode_gt_bboxes_final,encode_gt_bboxes),axis=0)
                     
                 batch_idx_use.append(i)
                 batch_count = batch_count +1
-                
+        
+
         pred_box_final = np.expand_dims(pred_box_final,axis = 3)
         class_labels = labels_final[:,1]
         labels_final = np.expand_dims(labels_final,axis=2)
@@ -145,6 +152,8 @@ class MultiboxRoutingLayer(caffe.Layer):
         #loc_data_final = np.expand_dims(loc_data_final,axis = 2)
         #loc_data_final = np.expand_dims(loc_data_final,axis=3)
         
+        top[2].reshape(loc_data_final.shape[0],loc_data_final.shape[1])
+        top[5].reshape(encode_gt_bboxes_final.shape[0],encode_gt_bboxes_final.shape[1])
         top[0].data[...] = pred_box_final # Goes to spatial transformer net
         top[1].data[...] = conf_final # Goes to confidence loss layer
         top[2].data[...] = loc_data_final # GOes to localization loss layer
@@ -160,7 +169,7 @@ class MultiboxRoutingLayer(caffe.Layer):
         ---------
         top[0] contains information about the predicted location [num_batches_used x 4 x max_matches x 1] where the 4 coordinates are xmin, ymin, xmax, ymax
         top[1] contains information about the confidence [(num_batchs_used*max_matches)xnum_classes]
-        top[2] contains gradients on predictions locations from the localization loss [num_batches_used x (4*max_matches)x 1 x 1]
+        top[2] contains gradients on predictions locations from the localization loss [num_batches_used x (4*max_matches)]
         """
         
         # Make sure the gradients are already weighted by the loss weight
@@ -175,24 +184,27 @@ class MultiboxRoutingLayer(caffe.Layer):
         # Get num_priors defined in here
         dLoc = np.zeros((num_batch,4,num_priors))
         # Get the gradient for mbox_loc
-
+        loc_count = 0
         for j in range(0,len(batch_with_words)):
             batch_idx = int(batch_with_words[j])
             for i in range(0,max_matches):
                 match_idx_use = int(match_indices_final[j,i])
-                #print match_idx_use
-                w_prior = prior_bboxes[match_idx_use]['xmax'] - prior_bboxes[match_idx_use]['xmin'] 
-                h_prior = prior_bboxes[match_idx_use]['ymax'] - prior_bboxes[match_idx_use]['ymin']
-                localization_grad = loc_diff[j,i*4:(i+1)*4]
-                # Gradient for xmin
-
-                dLoc[batch_idx,0,match_idx_use] = dLoc[batch_idx,0,match_idx_use] + (top_diff[j,0,i,0]+top_diff[j,2,i,0])*prior_variances[match_idx_use]['xmin']*w_prior + localization_grad[0]
-                # Gradient for ymin
-                dLoc[batch_idx,1,match_idx_use] = dLoc[batch_idx,1,match_idx_use] + (top_diff[j,1,i,0]+top_diff[j,3,i,0])*prior_variances[match_idx_use]['ymin']*h_prior + localization_grad[1]
-                # Gradient for xmax
-                dLoc[batch_idx,2,match_idx_use] = dLoc[batch_idx,2,match_idx_use] + prior_variances[match_idx_use]['xmax']*np.exp(prior_variances[match_idx_use]['xmax']*all_loc_preds[batch_idx][match_idx_use]['xmax'])*w_prior/2*(top_diff[j,2,i,0]-top_diff[j,0,i,0]) + localization_grad[2]
-                # Gradient for ymax
-                dLoc[batch_idx,3,match_idx_use] = dLoc[batch_idx,3,match_idx_use] + prior_variances[match_idx_use]['ymax']*np.exp(prior_variances[match_idx_use]['ymax']*all_loc_preds[batch_idx][match_idx_use]['ymax'])*h_prior/2*(top_diff[j,3,i,0]-top_diff[j,1,i,0]) + localization_grad[3]
+                if match_idx_use != -1:
+                
+                    #print match_idx_use
+                    w_prior = prior_bboxes[match_idx_use]['xmax'] - prior_bboxes[match_idx_use]['xmin'] 
+                    h_prior = prior_bboxes[match_idx_use]['ymax'] - prior_bboxes[match_idx_use]['ymin']
+                    localization_grad = loc_diff[loc_count,:]
+                    loc_count = loc_count +1
+                    # Gradient for xmin
+    
+                    dLoc[batch_idx,0,match_idx_use] = dLoc[batch_idx,0,match_idx_use] + (top_diff[j,0,i,0]+top_diff[j,2,i,0])*prior_variances[match_idx_use]['xmin']*w_prior + localization_grad[0]
+                    # Gradient for ymin
+                    dLoc[batch_idx,1,match_idx_use] = dLoc[batch_idx,1,match_idx_use] + (top_diff[j,1,i,0]+top_diff[j,3,i,0])*prior_variances[match_idx_use]['ymin']*h_prior + localization_grad[1]
+                    # Gradient for xmax
+                    dLoc[batch_idx,2,match_idx_use] = dLoc[batch_idx,2,match_idx_use] + prior_variances[match_idx_use]['xmax']*np.exp(prior_variances[match_idx_use]['xmax']*all_loc_preds[batch_idx][match_idx_use]['xmax'])*w_prior/2*(top_diff[j,2,i,0]-top_diff[j,0,i,0]) + localization_grad[2]
+                    # Gradient for ymax
+                    dLoc[batch_idx,3,match_idx_use] = dLoc[batch_idx,3,match_idx_use] + prior_variances[match_idx_use]['ymax']*np.exp(prior_variances[match_idx_use]['ymax']*all_loc_preds[batch_idx][match_idx_use]['ymax'])*h_prior/2*(top_diff[j,3,i,0]-top_diff[j,1,i,0]) + localization_grad[3]
         #Reshape dLoc so it's num_batchx(4*num_priors)
         dLoc = np.reshape(dLoc,(num_batch,4*num_priors))        
         # THe backpropagation for the confidence is just routed from the top layer

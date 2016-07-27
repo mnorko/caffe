@@ -54,7 +54,6 @@ coco_text = COCO_Text(annofile)
 
 # Get all the image information from COCO_Text
 img_ids = coco_text.getImgIds()
-img_ids = img_ids[:20]
 img_names_train = []
 img_names_val = []
 for img_id in img_ids:
@@ -63,8 +62,7 @@ for img_id in img_ids:
     file_name = img[0]["file_name"]
     setLabel = img[0]["set"]
     name = os.path.splitext(file_name)[0]
-#    name_split = nameTemp.split("_")
-#    name = "COCO_" + setLabel + '_' + name_split[2]
+
     if setLabel == "train":
         out_dir = out_dir_train
     else:
@@ -78,7 +76,7 @@ for img_id in img_ids:
         for d in anno:
             if (d['legibility'] == 'legible') & (d['language'] == 'english'):
                 if len(d['utf8_string']) < 24:
-                    d['category_id'] = 1 # text
+                    d['category_id'] = 91 # text
                     anno_total.append(d)
             
         
