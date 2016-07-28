@@ -21,7 +21,7 @@ layer {
   }
   data_param {
     source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
-    batch_size: 10
+    batch_size: 20
     backend: LMDB
   }
   annotated_data_param {
@@ -53,7 +53,7 @@ layer {
   }
   data_param {
     source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
-    batch_size: 10
+    batch_size: 20
     backend: LMDB
   }
   annotated_data_param {
@@ -1600,14 +1600,10 @@ layer {
   top: "gt_word_label"
   top: "conf_label"
   top: "loc_bbox_label"
-  propagate_down: true
-  propagate_down: true
-  propagate_down: false
-  propagate_down: false
   python_param {
     module: "multiboxRoutingLayer"
     layer: "MultiboxRoutingLayer"
-    param_str: "{'max_matches': 15,'overlap_threshold': 0.5}"
+    param_str: "{'max_matches': 15,'overlap_threshold': 0.4}"
   }
 }
 layer {
@@ -1630,8 +1626,6 @@ layer {
   bottom: "data_grayscale"
   bottom: "theta"
   top: "data_transform"
-  propagate_down: false
-  propagate_down: true
   python_param {
     module: "spatialTransformerMulti"
     layer: "SpatialTransformerMultiLayer"
@@ -1738,6 +1732,9 @@ layer {
   param { lr_mult: 0 }
   param { lr_mult: 0 }
   param { lr_mult: 0 }
+  batch_norm_param {
+    use_global_stats: true
+  }
 }
 layer {
   name: "relu1"
@@ -1784,6 +1781,9 @@ layer {
   param { lr_mult: 0 }
   param { lr_mult: 0 }
   param { lr_mult: 0 }
+  batch_norm_param {
+    use_global_stats: true
+  }
 }
 layer {
   name: "sc2"
@@ -3490,3 +3490,5 @@ layer {
 
   }
 }
+
+

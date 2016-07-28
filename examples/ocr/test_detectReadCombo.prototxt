@@ -20,7 +20,7 @@ layer {
     }
   }
   data_param {
-    source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
+    source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_val2014_final_lmdb"
     batch_size: 20
     backend: LMDB
   }
@@ -52,7 +52,7 @@ layer {
     }
   }
   data_param {
-    source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
+    source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_val2014_final_lmdb"
     batch_size: 20
     backend: LMDB
   }
