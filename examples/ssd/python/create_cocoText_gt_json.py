@@ -31,9 +31,6 @@ imgset_file_val = '/Users/marissac/data/coco/ImageSets/combo_val2014.txt'
 coco_text = COCO_Text(annofile)
 coco = COCO(coco_annofile)
 
-
-
-
 # Get all the image information from COCO_Text
 img_ids = coco_text.getImgIds(imgIds = coco_text.val)
 img_names_val = []
@@ -43,8 +40,6 @@ for img_id in img_ids:
     file_name = img[0]["file_name"]
     setLabel = img[0]["set"]
     name = os.path.splitext(file_name)[0]
-#    name_split = nameTemp.split("_")
-#    name = "COCO_" + setLabel + '_' + name_split[2]
     out_dir = out_dir_val
     
     if out_dir:

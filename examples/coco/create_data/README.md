@@ -34,7 +34,7 @@
   ```Shell
   python examples/coco/create_data/create_list_cocoCombo.py
   ```
-10. Create lmdb files for both training and validation sets. Depending on the dataset being create, you will need to update the mapfile to point to the labelmap with the correct class-label association and specify the subsets
+10. Create lmdb files for both training and validation sets. Depending on the dataset being create, you will need to update the mapfile to point to the labelmap with the correct class-label association and specify the subsets. If you want to created annotated word data, change the label_type to "json_word"
   ```Shell
   ./examples/coco/create_data/create_data_cocotext_combo_legible.sh
   ```
