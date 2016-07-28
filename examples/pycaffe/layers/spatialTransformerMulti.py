@@ -14,13 +14,11 @@ class SpatialTransformerMultiLayer(caffe.Layer):
     Transform an input using the transformation parameters computed by the 
     localization network. This requires the creation of a mesh grid, a 
     transformation of this gird, and an interpolation of the image along the grid
-    """
-    
+    """     
     def setup(self, bottom, top):
-        params = yaml.load(self.param_str)
-        #print params
-        #check_params(params)
-        
+        self.grid_global = []
+        self.x_s = []
+        self.y_s = []
         
     def reshape(self,bottom,top):
         params = yaml.load(self.param_str)
@@ -40,18 +38,16 @@ class SpatialTransformerMultiLayer(caffe.Layer):
         ---------
         top: Transformed image based on the transformer
         bottom: [0] - input image or convolutional outputs [num_batch,num_channels,H,W]
-                [1] - theta [num_batch*num_detects,6] - [theta_1_1,theta_1_2,theta_1_3, theta_2_1, theta_2_2, theta_2_3]
+                [1] - theta [num_batch*max_matches,6] - [theta_1_1,theta_1_2,theta_1_3, theta_2_1, theta_2_2, theta_2_3]
         """
         theta = bottom[1].data
         img = bottom[0].data
         
         
         params = yaml.load(self.param_str)
-        num_detect = params["num_detections"]
-        
+        num_detect = bottom[1].shape[0]/bottom[0].shape[0]
         N = bottom[0].shape[0]*num_detect # number of batches
-        
-        
+
         predefined_theta = {}
         # Set the theta values to the predefined parameters if they are specified
         if params.has_key("theta_1_1"):
@@ -75,7 +71,6 @@ class SpatialTransformerMultiLayer(caffe.Layer):
         
         # Reshape theta so it is num_batchx2x3
         theta = np.reshape(theta,[-1,2,3])
-        #print theta[0]
         
         out_height = params["output_H"]
         out_width = params["output_W"]
@@ -90,23 +85,19 @@ class SpatialTransformerMultiLayer(caffe.Layer):
         grid = np.reshape(grid,[-1])
         grid = np.tile(grid,N)
         grid = np.reshape(grid,[N,3,-1])
+        self.grid_global = grid
         
-        #print grid
         # Transform the mesh grid using the transformations specified by theta
         T_g =  batch_matmul(theta,grid)
         # Isolate and flatten x_s and y_s
-        global x_s
-        global y_s
-        x_s = T_g[:,0,:]
-        y_s = T_g[:,1,:]
-        x_s_flat = np.reshape(x_s,[-1])
-        y_s_flat = np.reshape(y_s,[-1])
+
+        self.x_s = T_g[:,0,:]
+        self.y_s = T_g[:,1,:]
+        x_s_flat = np.reshape(self.x_s,[-1])
+        y_s_flat = np.reshape(self.y_s,[-1])
     
-        #print x_s_flat
-        #print y_s_flat
         top[0].data[...] = interpolate(img, x_s_flat,y_s_flat,out_size,num_detect)
-        #top[0].data[...] = 100*np.ones(1,1,28,28)
-        
+
     def backward(self, top, propagate_down, bottom):
         """
         Backpropagate the gradients for theta and the input U
@@ -114,7 +105,7 @@ class SpatialTransformerMultiLayer(caffe.Layer):
         ---------
         top: information from the above layer with the transformed image
         bottom: [0] - input image or convolutional layer input [num_batch x num_channels x input_height x input_width]
-                [1] - theta parameters [num_batch x Num_transform_param] - in this case the num_transform_param = 6
+                [1] - theta parameters [num_batch*max_matches x Num_transform_param] - in this case the num_transform_param = 6
         """
         img = bottom[0].data
         theta = bottom[1].data
@@ -123,19 +114,18 @@ class SpatialTransformerMultiLayer(caffe.Layer):
         out_height = params["output_H"]
         out_width = params["output_W"]
         out_size = np.array([out_height,out_width])
-        
-        num_detect = params["num_detections"]
+        num_detect = bottom[1].shape[0]/bottom[0].shape[0]
         
         top_diff = top[0].diff
         
-        x_s_flat = np.reshape(x_s,[-1])
-        y_s_flat = np.reshape(y_s,[-1])
+        x_s_flat = np.reshape(self.x_s,[-1])
+        y_s_flat = np.reshape(self.y_s,[-1])
         
         if propagate_down[0]: # Propagate convolutional input gradients down
             bottom[0].diff[...] = compute_dU(img,x_s_flat,y_s_flat,out_size,top_diff,num_detect)
             
         if propagate_down[1]: # Propagate theta gradients down
-            bottom[1].diff[...] = compute_dTheta(img,x_s_flat,y_s_flat,out_size,theta,top_diff,num_detect)
+            bottom[1].diff[...] = compute_dTheta(img,x_s_flat,y_s_flat,out_size,theta,top_diff,num_detect,self.grid_global)
 def check_params(params):
     assert params["transform_type"] == "affine","Only supports affine transformations"
     assert params["sampler_type"] == "bilinear","Only supports bilinear interpolation"   
@@ -243,8 +233,6 @@ def interpolate(img,x,y,out_size,num_detect):
         xs_batch = x[output_combo*k:output_combo*(k+1)]
         ys_batch = y[output_combo*k:output_combo*(k+1)]
         
-        #print xs_batch
-        #print ys_batch
 
         
         w0_0 = np.clip(1-abs(xs_batch-x0_batch),0,1000)*np.clip(1-abs(ys_batch-y0_batch),0,1000)
@@ -272,21 +260,16 @@ def interpolate(img,x,y,out_size,num_detect):
         img_0_1 = img_batch[:,idx_use_0_1]
         img_1_0 = img_batch[:,idx_use_1_0]
         img_1_1 = img_batch[:,idx_use_1_1]
-        #print img_0_0
-#        print np.multiply(img_0_0,w0_0)
-#        print np.multiply(img_0_1,w0_1)
-#        print np.multiply(img_1_0,w1_0)
-#        print np.multiply(img_1_1,w1_1) 
+
         img_sum = np.multiply(img_0_0,w0_0) + np.multiply(img_0_1,w0_1) + np.multiply(img_1_0,w1_0) + np.multiply(img_1_1,w1_1) 
         interp_image[k,:,:,:] = np.reshape(img_sum,[C,out_height,out_width])
         
-        #print interp_image
-    #print interp_image.shape
     return interp_image
     
 def compute_dU(img,x,y,out_size,top_diff,num_detect):
     """ 
     Compute the derivative of the objective function in terms of the input image or convolutional layer U
+    This back propagation function is not optimized to be fast. If you want to use it, you should update this piece to get rid of some of the for loops
     
     Parameters
     ----------
@@ -308,8 +291,7 @@ def compute_dU(img,x,y,out_size,top_diff,num_detect):
     # scale indices from [-1,1] to [0, width/height]
     x = (x+1.0)*(W-1)/2.0 # x_s
     y = (y+1.0)*(H-1)/2.0 # y_s
-    #print x
-    #print y
+
     
     out_height = out_size[0]
     out_width = out_size[1]
@@ -340,7 +322,7 @@ def compute_dU(img,x,y,out_size,top_diff,num_detect):
             total_derivative[k,:,:,:] = total_derivative[k,:,:,:] + dervTemp        
     return total_derivative
                 
-def compute_dTheta(img,x,y,out_size,theta,top_diff,num_detect):
+def compute_dTheta(img,x,y,out_size,theta,top_diff,num_detect,grid):
     """ 
     Compute the derivative of the objective function in terms of theta
     

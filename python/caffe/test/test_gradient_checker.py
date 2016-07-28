@@ -49,7 +49,7 @@ class TestGradientChecker():
         #self.assertAlmostEqual(float(self.top[0].data), loss, 5)
         checker = GradientChecker(1e-5, 3e-2)
         checker.check_gradient_exhaustive(
-            layer, self.bottom, self.top, check_bottom=[0])
+            layer, self.bottom, self.top, check_bottom=[1])
 
 #    def test_inner_product(self):
 #        lp = caffe_pb2.LayerParameter()

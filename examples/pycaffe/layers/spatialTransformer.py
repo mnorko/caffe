@@ -9,7 +9,7 @@ import caffe
 import numpy as np
 import yaml
 
-class SpatialTransformerLayer(caffe.Layer):
+class SpatialTransformerFastLayer(caffe.Layer):
     """
     Transform an input using the transformation parameters computed by the 
     localization network. This requires the creation of a mesh grid, a 
@@ -17,9 +17,9 @@ class SpatialTransformerLayer(caffe.Layer):
     """
     
     def setup(self, bottom, top):
-        params = yaml.load(self.param_str)
-        #print params
-        #check_params(params)
+        self.grid_global = []
+        self.x_s = []
+        self.y_s = []
         
         
     def reshape(self,bottom,top):
@@ -78,7 +78,6 @@ class SpatialTransformerLayer(caffe.Layer):
         out_width = params["output_W"]
         out_size = np.array([out_height,out_width])
         
-        global grid
         # Create the grid of (x_t, y_t, 1), eq (1)
         grid = create_meshgrid(out_height,out_width)
         # The initial grid is 3 x (out_height*out_width), to work with several 
@@ -87,17 +86,17 @@ class SpatialTransformerLayer(caffe.Layer):
         grid = np.reshape(grid,[-1])
         grid = np.tile(grid,N)
         grid = np.reshape(grid,[N,3,-1])
+        self.grid_global = grid
         
         #print grid
         # Transform the mesh grid using the transformations specified by theta
         T_g =  batch_matmul(theta,grid)
         # Isolate and flatten x_s and y_s
-        global x_s
-        global y_s
-        x_s = T_g[:,0,:]
-        y_s = T_g[:,1,:]
-        x_s_flat = np.reshape(x_s,[-1])
-        y_s_flat = np.reshape(y_s,[-1])
+
+        self.x_s = T_g[:,0,:]
+        self.y_s = T_g[:,1,:]
+        x_s_flat = np.reshape(self.x_s,[-1])
+        y_s_flat = np.reshape(self.y_s,[-1])
     
         #print x_s_flat
         #print y_s_flat
@@ -123,13 +122,13 @@ class SpatialTransformerLayer(caffe.Layer):
         
         top_diff = top[0].diff
         
-        x_s_flat = np.reshape(x_s,[-1])
-        y_s_flat = np.reshape(y_s,[-1])
+        x_s_flat = np.reshape(self.x_s,[-1])
+        y_s_flat = np.reshape(self.y_s,[-1])
         if propagate_down[0]: # Propagate convolutional input gradients down
             bottom[0].diff[...] = compute_dU(img,x_s_flat,y_s_flat,out_size,top_diff)
             
         if propagate_down[1]: # Propagate theta gradients down
-            bottom[1].diff[...] = compute_dTheta(img,x_s_flat,y_s_flat,out_size,theta,top_diff)
+            bottom[1].diff[...] = compute_dTheta(img,x_s_flat,y_s_flat,out_size,theta,top_diff,self.grid_global)
 def check_params(params):
     assert params["transform_type"] == "affine","Only supports affine transformations"
     assert params["sampler_type"] == "bilinear","Only supports bilinear interpolation"   
@@ -232,10 +231,7 @@ def interpolate(img,x,y,out_size):
         
         xs_batch = x[output_combo*k:output_combo*(k+1)]
         ys_batch = y[output_combo*k:output_combo*(k+1)]
-        
-        #print xs_batch
-        #print ys_batch
-
+    
         
         w0_0 = np.clip(1-abs(xs_batch-x0_batch),0,1000)*np.clip(1-abs(ys_batch-y0_batch),0,1000)
         w0_1 = np.clip(1-abs(xs_batch-x0_batch),0,1000)*np.clip(1-abs(ys_batch-y1_w_batch),0,1000)
@@ -258,21 +254,17 @@ def interpolate(img,x,y,out_size):
         img_0_1 = img_batch[:,idx_use_0_1]
         img_1_0 = img_batch[:,idx_use_1_0]
         img_1_1 = img_batch[:,idx_use_1_1]
-        #print img_0_0
-#        print np.multiply(img_0_0,w0_0)
-#        print np.multiply(img_0_1,w0_1)
-#        print np.multiply(img_1_0,w1_0)
-#        print np.multiply(img_1_1,w1_1) 
+
         img_sum = np.multiply(img_0_0,w0_0) + np.multiply(img_0_1,w0_1) + np.multiply(img_1_0,w1_0) + np.multiply(img_1_1,w1_1) 
         
         interp_image[k,:,:,:] = np.reshape(img_sum,[C,out_height,out_width])
-        #print interp_image
-    #print interp_image.shape
+
     return interp_image
     
 def compute_dU(img,x,y,out_size,top_diff):
     """ 
     Compute the derivative of the objective function in terms of the input image or convolutional layer U
+    This back propagation function is not optimized to be fast. If you want to use it, you should update this piece to get rid of some of the for loops
     
     Parameters
     ----------
@@ -294,8 +286,7 @@ def compute_dU(img,x,y,out_size,top_diff):
     # scale indices from [-1,1] to [0, width/height]
     x = (x+1.0)*(W-1)/2.0 # x_s
     y = (y+1.0)*(H-1)/2.0 # y_s
-    #print x
-    #print y
+
     
     out_height = out_size[0]
     out_width = out_size[1]
@@ -325,7 +316,7 @@ def compute_dU(img,x,y,out_size,top_diff):
         total_derivative[k,:,:,:] = dervTemp        
     return total_derivative
                 
-def compute_dTheta(img,x,y,out_size,theta,top_diff):
+def compute_dTheta(img,x,y,out_size,theta,top_diff,grid):
     """ 
     Compute the derivative of the objective function in terms of theta
     
@@ -370,40 +361,65 @@ def compute_dTheta(img,x,y,out_size,theta,top_diff):
         grid_mult_y  = np.zeros((theta.shape[1],output_combo))
         grid_mult_y[3:6,:] = grid[k,0:3,:]
         
-        for n in range(0,H):
-            for m in range(0,W):
+        w_vals = range(0,W)
+        h_vals = range(0,H)
+        
+        # Find all the x and y values close to this location
+        x_sub = np.expand_dims(x_batch,1)- w_vals # The result of this should be output_combo x W
+        y_sub = np.expand_dims(y_batch,1) - h_vals # The result of this should be ouput_combo x H
+        
+        x_vals = np.clip(1-abs(x_sub),0,1000)
+        y_vals = np.clip(1-abs(y_sub),0,1000)
+        
+        # Find where the values of abs(m-x_batch) > 1
+        mult_val_y = np.clip(-y_sub,-1, 1)
+        mult_val_y = np.sign(mult_val_y)
+        
+        mult_val_x = np.clip(-x_sub,-1, 1)
+        mult_val_x = np.sign(mult_val_x)
+        
+        abs_y = abs(-y_sub)
+        abs_x = abs(-x_sub)
+        
+        large_state_y = np.where(abs_y>=1)
+        mult_val_y[large_state_y] = 0
+        
+        large_state_x = np.where(abs_x>=1)
+        mult_val_x[large_state_x] = 0
+        
+        # Create tensors with the values of y_vals,x_vals, mult_val_x, and mult_val_y for easy multiplication
+        # We want each tensor to have the size output_comboxHxW
+        x_vals_tensor = np.repeat(np.expand_dims(x_vals,1),H,axis =1)
+        mult_val_x_tensor = np.repeat(np.expand_dims(mult_val_x,1),H,axis =1)
+        
+        y_vals_tensor = np.repeat(np.expand_dims(y_vals,2),W,axis =2)
+        mult_val_y_tensor = np.repeat(np.expand_dims(mult_val_y,2),W,axis =2)
+        
+        dx_tensor = np.multiply(y_vals_tensor,mult_val_x_tensor)
+        dy_tensor = np.multiply(x_vals_tensor,mult_val_y_tensor)
+        
+        for c_idx in range(0,C):
+            top_derv = top_diff[k,c_idx,:,:]
+            top_derv = np.reshape(top_derv,-1)
+            
+            top_derv_tensor = np.repeat(np.expand_dims(top_derv,1),H,axis = 1)
+            top_derv_tensor = np.repeat(np.expand_dims(top_derv_tensor,2),W,axis = 2)
+            
+            dx_tensor = np.multiply(top_derv_tensor,dx_tensor)
+            dy_tensor = np.multiply(top_derv_tensor,dy_tensor)
+            
+            img_tensor = np.repeat(np.expand_dims(img[k,c_idx,:,:],0),output_combo,axis = 0)
+            
+            dx_tensor_total = np.multiply(dx_tensor,img_tensor)
+            dy_tensor_total = np.multiply(dy_tensor,img_tensor)
+            
+            dx_tensor_total = np.reshape(dx_tensor_total,(output_combo,H*W))
+            dy_tensor_total = np.reshape(dy_tensor_total,(output_combo,H*W))
+            
+            
+            dx_total = dx_total + np.sum(dx_tensor_total,axis=1)
+            dy_total = dy_total + np.sum(dy_tensor_total,axis=1)
 
-                # Find all the x and y values close to this location
-                x_vals = np.clip(1-abs(x_batch-m),0,1000)
-                y_vals = np.clip(1-abs(y_batch-n),0,1000)
-                
-                mult_val_x = np.clip(m-x_batch,-1, 1)
-                mult_val_x = np.sign(mult_val_x)
-                mult_val_y = np.clip(n-y_batch,-1, 1)
-                mult_val_y = np.sign(mult_val_y)
-                
-                # Find where the values of abs(m-x_batch) > 1
-                abs_x = abs(m-x_batch)
-                large_state_x = np.where(abs_x>=1)
-                mult_val_x[large_state_x] = 0
-                abs_y = abs(n-y_batch)
-                large_state_y = np.where(abs_y>=1)
-                mult_val_y[large_state_y] = 0
-                
-                dx = np.multiply(y_vals,mult_val_x)
-                dy = np.multiply(x_vals,mult_val_y)
-
-                
-                for c_idx in range(0,C):
-                    # Multiply the derivative by dE/dV from the layer above
-                    top_derv = top_diff[k,c_idx,:,:]
-                    top_derv = np.reshape(top_derv,-1)
-                    
-                    dx = np.multiply(top_derv,dx)
-                    dy = np.multiply(top_derv,dy)
-                    
-                    dx_total = dx_total + dx*img[k,c_idx,n,m]
-                    dy_total = dy_total + dy*img[k,c_idx,n,m]
         
         dx_total = dx_total*(H-1)/2
         dy_total = dy_total*(W-1)/2

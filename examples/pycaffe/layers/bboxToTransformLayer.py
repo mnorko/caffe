@@ -28,6 +28,7 @@ class BboxToTransformLayer(caffe.Layer):
     def forward(self,bottom,top):
         """
         Convert the bounding boxes to theta values to input into the spatial transform layer
+        Convert the images to grayscale and subselect them based on the images that have legible text
         
         Parameters
         ---------
@@ -46,7 +47,7 @@ class BboxToTransformLayer(caffe.Layer):
         num_batch_used = pred_bbox.shape[0]
         max_matches = pred_bbox.shape[2]
         
-        # Find the vindices for the images in the batch with legible text
+        # Find the indices for the images in the batch with legible text
         batch_idx_num = gt_data[:,0,0,0]
         batch_idx_used = np.unique(batch_idx_num)
         
@@ -60,6 +61,7 @@ class BboxToTransformLayer(caffe.Layer):
                 if width_orig == -1:
                     theta[i*max_matches + k,:] = np.array([1,0,0,0,1,0])
                 else:
+                    # Pred_bboxes are aon a 0 to 1 scale - convert them to be relative to the new image size
                     xmin = pred_bbox[i,0,k]*width_orig 
                     ymin = pred_bbox[i,1,k]*height_orig
                     xmax = pred_bbox[i,2,k]*width_orig 
