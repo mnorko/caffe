@@ -5,11 +5,11 @@
 
 1. For the test scripts, tools, and prototxt files for the ocr pipeline and the combined text detection/word reading network, see `$CAFFE_ROOT/examples/ocr`. This folder also contains the code for performing net surgery to combine the pre-trained weights for the detection and reading network. Further documentation is presented within that folder
 
-2. Code for checking the backpropagation for python caffe layers is contained in  `$CAFFE_ROOT/python/caffe/test/'. For additional information, see the description in the "Gradient Checker for Python Layers" section below.
+2. Code for checking the backpropagation for python caffe layers is contained in  `$CAFFE_ROOT/python/caffe/test/`. For additional information, see the description in the "Gradient Checker for Python Layers" section below.
 
 3. Files for creating the lmdb data for COCO-Text is found in `$CAFFE_ROOT/examples/coco/create_data`. The documentation on how to create the lmdb folders is included within that folder.
 
-4. The python layers are contained in `$CAFFE_ROOT/examples/pycaffe/layers'. More information on those layers is included in the "Python Layers for Caffe" section below.
+4. The python layers are contained in `$CAFFE_ROOT/examples/pycaffe/layers`. More information on those layers is included in the "Python Layers for Caffe" section below.
 
 5. For networks and code that test the spatial transformer network on MNIST, see examples/mnist. Further documentation provided within the folder
 

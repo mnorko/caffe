@@ -96,8 +96,8 @@ class BboxToTransformLayer(caffe.Layer):
         img_data = top[1].data
         num_batch_used = img_data.shape[0]
         max_matches = theta_diff.shape[0]/num_batch_used
-        H = bottom[2].shape[2]
-        W = bottom[2].shape[3]
+        H = float(bottom[2].shape[2])
+        W = float(bottom[2].shape[3])
         gt_data = bottom[1].data
         
         dPred = np.zeros((num_batch_used,4,max_matches))
@@ -107,10 +107,11 @@ class BboxToTransformLayer(caffe.Layer):
                 height_orig = gt_data[i*max_matches + k,8,0,0]
                 
                 diff_temp = theta_diff[i*max_matches + k,:]
-                dPred[i,0,k] = -diff_temp[0]*(width_orig/W) + diff_temp[2]*(2/W*(1-width_orig/2))
-                dPred[i,1,k] = -diff_temp[4]*(height_orig/H) + diff_temp[5]*(2/H*(1-height_orig/2))
+                dPred[i,0,k] = -diff_temp[0]*(width_orig/W) + diff_temp[2]*width_orig/W
+
+                dPred[i,1,k] = -diff_temp[4]*(height_orig/H) + diff_temp[5]*height_orig/H
                 dPred[i,2,k] = width_orig/W*(diff_temp[0] + diff_temp[2])
-                dPred[i,3,k] = height_orig/H*(diff_temp[1]+diff_temp[3])
+                dPred[i,3,k] = height_orig/H*(diff_temp[4]+diff_temp[5])
                 
         dPred =  np.expand_dims(dPred,axis = 3)
         bottom[0].diff[...] = dPred

@@ -31,8 +31,8 @@ class TestGradientChecker():
         gt_ymax = 0.6
         gt_data = np.zeros((1,33))
         gt_data[0,3:7] = np.array([gt_xmin,gt_ymin,gt_xmax,gt_ymax])
-        gt_data[0,8] = 20
-        gt_data[0,9] = 20
+        gt_data[0,8] = 30
+        gt_data[0,9] = 30
         gt_data = np.expand_dims(gt_data,axis=2)
         gt_data = np.expand_dims(gt_data,axis=3)
         
