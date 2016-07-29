@@ -16,7 +16,7 @@ model_weights = '/Users/marissac/caffe/examples/mnist/spatial_trans_test/ST_CNN_
 
 net = caffe.Net(model_def,      # defines the structure of the model
                 model_weights,  # contains the trained weights
-                caffe.TRAIN)     # use test mode (e.g., don't perform dropout)
+                caffe.TEST)     # use test mode (e.g., don't perform dropout)
                 
 net.forward()
 

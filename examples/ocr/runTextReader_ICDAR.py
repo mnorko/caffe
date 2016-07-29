@@ -29,6 +29,7 @@ import pickle
 import glob
 import json
 
+
 CAFFE_LABEL_TO_CHAR_MAP = {
     0: '0',
     1: '1',
@@ -258,7 +259,7 @@ for img_idx in range(0,numFiles):
 
     detection_read = []
     
-    detection_read= detect_read_ssd.ssd_detect_box(image,net, transformer,confidence_threshold = thresh_use,image_resize = 300,multiclass_flag = 1,text_class = 81,text_class2 = 82)
+    detection_read= ssd_detect_box(image,net, transformer,confidence_threshold = thresh_use,image_resize = 300,multiclass_flag = 1,text_class = 81,text_class2 = 85)
     
     
     # Finish defining fields in detection cocoText info
@@ -266,7 +267,7 @@ for img_idx in range(0,numFiles):
     num_detect = len(detection_read)
     detection_cocoText.imgToAnns[imgUse] = list(np.linspace(annStart,annStart+num_detect-1,num_detect))
 
-    detection_read = detect_read_ssd.synth_read_words(image,detection_read,CAFFE_LABEL_TO_CHAR_MAP,net_synth, synth_transformer)
+    detection_read = synth_read_words(image,detection_read,CAFFE_LABEL_TO_CHAR_MAP,net_synth, synth_transformer)
     
     for i in range(0,num_detect):
         bbox_temp = detection_read[i]['bounding_box']
@@ -283,15 +284,15 @@ detection_img = coco_evaluation.getDetections(ct,detection_cocoText,imgIds = img
 overallEval = coco_evaluation.evaluateEndToEnd(ct, detection_cocoText, imgIds =  imgIdsTotal, detection_threshold = 0.5)
 coco_evaluation.printDetailedResults(ct, detection_img , overallEval, 'yahoo')
 
-with open('detection_' + icdar_dataset + '_' + data_type + '_anns.pickle','wb') as f:
+with open('detection_' + icdar_dataset + '_' + data_type + '_legOnly_anns.pickle','wb') as f:
     pickle.dump(detection_cocoText.anns,f)
     
-with open('detection_' + icdar_dataset + '_' + data_type + '_imgToAnns.pickle','wb') as f:
+with open('detection_' + icdar_dataset + '_' + data_type + '_legOnly_imgToAnns.pickle','wb') as f:
     pickle.dump(detection_cocoText.imgToAnns,f)
     
-with open('detection_' + icdar_dataset + '_gt_' + data_type + '_anns.pickle','wb') as f:
+with open('detection_' + icdar_dataset + '_gt_' + data_type + '_legOnly_anns.pickle','wb') as f:
     pickle.dump(ct.anns,f)
     
-with open('detection_' + icdar_dataset + '_gt_' + data_type + '_imgToAnns.pickle','wb') as f:
+with open('detection_' + icdar_dataset + '_gt_' + data_type + '_legOnly_imgToAnns.pickle','wb') as f:
     pickle.dump(ct.imgToAnns,f)
 

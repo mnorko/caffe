@@ -23,13 +23,13 @@ our_results = coco_text.COCO_Text()
 icdar_dataset = "icdar-2011"
 data_type = "test-textloc-gt"
 
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_anns.pickle','rb') as f1:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_legOnly_anns.pickle','rb') as f1:
     anns_start = pickle.load(f1)
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_imgToAnns.pickle','rb') as f2:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_legOnly_imgToAnns.pickle','rb') as f2:
     imgToAnns_start = pickle.load(f2)
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_anns.pickle','rb') as f3:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_legOnly_anns.pickle','rb') as f3:
     gt_anns_start = pickle.load(f3)
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_imgToAnns.pickle','rb') as f4:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_legOnly_imgToAnns.pickle','rb') as f4:
     gt_imgToAnns_start = pickle.load(f4)
     
     

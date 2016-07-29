@@ -20,13 +20,13 @@ data_type = "test-textloc-gt"
 
 our_results = coco_text.COCO_Text()
 
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_anns.pickle','rb') as f1:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_legOnly_anns.pickle','rb') as f1:
     anns_start = pickle.load(f1)
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_imgToAnns.pickle','rb') as f2:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_' + data_type + '_legOnly_imgToAnns.pickle','rb') as f2:
     imgToAnns_start = pickle.load(f2)
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_anns.pickle','rb') as f3:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_legOnly_anns.pickle','rb') as f3:
     gt_anns_start = pickle.load(f3)
-with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_imgToAnns.pickle','rb') as f4:
+with open('/Users/marissac/caffe/examples/ssd/python/detection_' + icdar_dataset + '_gt_' + data_type + '_legOnly_imgToAnns.pickle','rb') as f4:
     gt_imgToAnns_start = pickle.load(f4)
     
 our_results.anns = anns_start
@@ -43,7 +43,7 @@ ct.imgToAnns = gt_imgToAnns_start
 
 imgIdsTotal = imgToAnns_start.keys()
 
-confidence = 0.2
+confidence = 0.22
 our_results_reduced = coco_evaluation.reduceDetections(our_results, confidence_threshold = confidence)
 our_detections = coco_evaluation.getDetections(ct,our_results_reduced, detection_threshold = 0.5)
 overallEval = coco_evaluation.evaluateEndToEnd(ct, our_results_reduced, imgIds =  imgIdsTotal, detection_threshold = 0.5)

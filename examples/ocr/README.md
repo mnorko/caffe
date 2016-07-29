@@ -56,6 +56,16 @@ This folder contains prototxt files and code used to test and train the combined
 
 ```eval_ICDAR_results.py```- uses the COCO-Text API to find precision-recall values for ICDAR datasets. Prior to running this you need to create the pickle files with annotations and imgToAnns using ```runTextReader_ICDAR.py``` 
 
+In order to compute metrics for ICDAR, we need to create the json files for the ICDAR datasets similar to COCO-Text. 
+
+1. Obtain ICDAR data from a deeplearn machine here: `/nfs/leechenyu/datasets/ICDAR` The ICDAR data is provided in the form of numbered images names (e.g. 100.jpg) and text files for each image with ground truth information (e.g. gt_100.txt)
+
+2. To interact with ICDAR using the COCO-Text API, you need to first convert the ground truth information to json files using `$CAFFE_ROOT/examples/coco/create_data/split_annotation_ICDAR.py`
+
+3. After the json files are created, run `runTextReader_ICDAR.py` to get the pickle results. 
+
+4. Once the pickle files are created, you can run `coco_text_createPRCurve_ICDAR.py`  and `eval_ICDAR_results.py` to get the evaluation parameters 
+
 ### Text Reader Network
 
 The folder ```90ksynth``` contains the files needed for the text reader network. I have been using deploy_2.prototxt to peform word reading for input images. deploy_ocr_spatial_transform_tullTest.prototxt is used to test the spatial transform on the word reader network.
