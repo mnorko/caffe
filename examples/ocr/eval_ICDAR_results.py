@@ -6,8 +6,7 @@ Created on Fri Jun 17 15:12:18 2016
 """
 # Use the COCO-Text API to compute the precision and recall metrics on ICDAR data
 import sys
-sys.path.append("/Users/marissac/Documents/COCOText/coco-text-master")
-
+sys.path.append("/Users/marissac/Documents/COCOText/github/coco-text")
 import coco_text
 ct = coco_text.COCO_Text()
 

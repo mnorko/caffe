@@ -4,6 +4,8 @@
 
 This folder contains protoxt files for the combined network, a script for combined weights from the text detector and word reader networks, as well as code for testing the end-to-end text reading pipeline.
 
+Note: In several of the test scripts I use a function from coco_evaluation called reduceDetections. This function is included in the ["reduce_detect" branch of the coco-text repository on my corp git](https://git.corp.yahoo.com/marissac/coco-text/tree/reduce_detect) 
+
 ### Code for vision pipeline
 
 ```detect_read_ssd.py``` contains the functions that can be included in the vision OCR pipeline and they should be generally compatible with Rob's current inputs and outputs. ```ssd_detect_box.py``` uses the SSD network to read an image and output bounding boxes. ```synth_read_words.py``` uses the 90ksynth network to read the words in the cropped text images.

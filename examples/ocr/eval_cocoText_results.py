@@ -6,7 +6,7 @@ Created on Fri Jun 17 15:12:18 2016
 """
 # Compute the precision and recall values for COCO-Text
 import sys
-sys.path.append("/Users/marissac/Documents/COCOText/coco-text-master")
+sys.path.append("/Users/marissac/Documents/COCOText/github/coco-text")
 
 import coco_text
 

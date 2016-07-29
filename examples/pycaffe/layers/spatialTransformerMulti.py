@@ -22,12 +22,12 @@ class SpatialTransformerMultiLayer(caffe.Layer):
         
     def reshape(self,bottom,top):
         params = yaml.load(self.param_str)
-        numDetect = params["num_detections"]
+        num_detect = bottom[1].shape[0]/bottom[0].shape[0]
         N = bottom[0].shape[0] # number of batches
         C = bottom[0].shape[1] # number of channels
         
        # shape = np.array((N, C, params["output_H"], params["output_W"]))
-        top[0].reshape(N*numDetect,C,params["output_H"], params["output_W"])
+        top[0].reshape(N*num_detect,C,params["output_H"], params["output_W"])
         
         
     def forward(self,bottom,top):

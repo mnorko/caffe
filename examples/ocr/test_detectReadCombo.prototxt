@@ -27,7 +27,7 @@ layer {
   annotated_data_param {
     batch_sampler {
     }
-    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText.prototxt"
+    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText_legibleOnly.prototxt"
   }
 }
 layer {
@@ -59,7 +59,7 @@ layer {
   annotated_data_param {
     batch_sampler {
     }
-    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText.prototxt"
+    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText_legibleOnly.prototxt"
   }
 }
 layer {

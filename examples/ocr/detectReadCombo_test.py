@@ -126,7 +126,7 @@ net_combo = caffe.Net(model_combo,combo_weights,caffe.TEST)
 
 
 net_combo.forward()    
-#net_combo.backward()   
+net_combo.backward()   
 #solver.step(1)              
 #net_synth.blobs['data'].data[...] = net_combo.blobs['data_transform'].data
 #

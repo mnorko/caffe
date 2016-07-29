@@ -2,21 +2,22 @@
 
 ### Overview
 
-1. For SSD text detection testing code, see /examples/ssd/python. Further documentation is presented within that folder
 
-2. For prototxt files for text reading, see /examples/ocr/90ksynth
+1. For the test scripts, tools, and prototxt files for the ocr pipeline and the combined text detection/word reading network, see `$CAFFE_ROOT/examples/ocr`. This folder also contains the code for performing net surgery to combine the pre-trained weights for the detection and reading network. Further documentation is presented within that folder
 
-3. For prototxt files and testing code for the combined text detection/word reading network, see /examples/ocr. This folder also contains the code for performing net surgery to combine the pre-trained weights for the detection and reading network. as well as the net surgery code to combine detection and read. Further documentation is presented within that folder
+2. Code for checking the backpropagation for python caffe layers is contained in  `$CAFFE_ROOT/python/caffe/test/'. For additional information, see the description in the "Gradient Checker for Python Layers" section below.
 
-4. For ipython notebooks for testing text detection, tex reading, and the full combined network, see /examples. Further documentation is provided within that folder.
+3. Files for creating the lmdb data for COCO-Text is found in `$CAFFE_ROOT/examples/coco/create_data`. The documentation on how to create the lmdb folders is included within that folder.
+
+4. The python layers are contained in `$CAFFE_ROOT/examples/pycaffe/layers'. More information on those layers is included in the "Python Layers for Caffe" section below.
 
 5. For networks and code that test the spatial transformer network on MNIST, see examples/mnist. Further documentation provided within the folder
 
-6. Files for creating the lmdb data for COCO-Text is found in `$CAFFE_ROOT/examples/coco/create_data`. The documentation on how to create the lmdb folders is included within that folder. 
+
 
 ### Python Layers for Caffe
 
-All of the new caffe layers that were written for the combined text detector and reader are in /examples/pycaffe/layers. 
+All of the new caffe layers that were written for the combined text detector and reader are in `$CAFFE_ROOT/examples/pycaffe/layers'. 
 
 1. Add `$CAFFE_ROOT/examples/pycaffe/layers` to your PYTHONPATH
 
@@ -47,3 +48,13 @@ Several layers were created for the combined text reader network.
 4. `multibox_util.py` - contains functions called in mutliboxRoutingLayer
 
 5. `bboxToTransformLayer.py` - Converts the bounding box parameters into the theta transform parameters and converts the input images to grayscale.
+
+### Gradient Checker for Python Layers
+
+I updated a gradient checker for python layers that was found [here](https://github.com/tnarihi/caffe/tree/python-gradient-checker). 
+
+1. This code added a "create_layer" option which allows you to create a specific layer and run a forward and backward pass on only that layer.  
+
+2. `$CAFFE_ROOT/python/caffe/gradient_check_util.py` - contains the main gradient checking functions 
+
+3. `$CAFFE_ROOT/python/caffe/test/test_gradient_checker.py` - the file sets up and runs the gradient check for a specified layer. I set up this code to run on the spatial transformer layer. $CAFFE_ROOT/python/caffe/test/test_gradient_checker_multibox_route.py` runs the gradient check for the multibox routing layer which requires inputs from a network to make sure that the label inputs make sense.

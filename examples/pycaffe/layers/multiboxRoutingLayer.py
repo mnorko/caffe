@@ -80,7 +80,6 @@ class MultiboxRoutingLayer(caffe.Layer):
         
         # Find the number of batches with label information
         num_batch_used = len([x for x in gt_batch_id if len(x) >0])
-
         # Retreive prior box bounding box and variance information
         self.prior_bboxes, self.prior_variances = multibox_util.getPriorBBoxes(prior_data,num_priors)
         
@@ -169,6 +168,7 @@ class MultiboxRoutingLayer(caffe.Layer):
         top_diff = top[0].diff
         conf_diff = top[1].diff
         loc_diff = top[2].diff
+        
         loc_data = bottom[0].data
         num_priors = loc_data.shape[1]/4
         num_batch = loc_data.shape[0]
@@ -201,11 +201,13 @@ class MultiboxRoutingLayer(caffe.Layer):
         dLoc = np.reshape(dLoc,(num_batch,4*num_priors))        
         # THe backpropagation for the confidence is just routed from the top layer
         dConf = multibox_util.sortConfGrad(conf_diff,self.match_indices_final,num_priors,num_batch,self.batch_with_words)
-            
+        
         if propagate_down[0]: # Propagate convolutional input gradients down
             bottom[0].diff[...] = dLoc
             
+            
         if propagate_down[1]: # Propagate theta gradients down
             bottom[1].diff[...] = dConf
+            
         
         

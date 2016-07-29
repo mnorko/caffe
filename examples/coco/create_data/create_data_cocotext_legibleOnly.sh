@@ -6,7 +6,7 @@ cd $root_dir
 redo=true
 data_root_dir="$HOME/data/coco"
 dataset_name="coco"
-mapfile="$root_dir/data/$dataset_name/labelmap_cocoText.prototxt"
+mapfile="$root_dir/data/$dataset_name/labelmap_cocoText_legibleOnly.prototxt"
 anno_type="detection"
 label_type="json_word"
 db="lmdb"

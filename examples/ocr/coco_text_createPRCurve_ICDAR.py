@@ -5,7 +5,7 @@ Created on Tue Jun  7 13:23:47 2016
 @author: marissac
 """
 import sys
-sys.path.append("/Users/marissac/Documents/COCOText/coco-text-master")
+sys.path.append("/Users/marissac/Documents/COCOText/github/coco-text")
 
 import coco_text
 ct = coco_text.COCO_Text()

@@ -6,16 +6,14 @@ Created on Fri Jul  8 14:29:34 2016
 """
 
 import sys
-sys.path.append("/Users/marissac/Documents/COCOText/coco-text-master")
+sys.path.append("/Users/marissac/Documents/COCOText/github/coco-text")
 
 import coco_text
 
 imgSize = 300.0
 
 import numpy as np
-import skimage.io as io
 import matplotlib.pyplot as plt
-import pylab
 import coco_evaluation
 import pickle
 import statistics as stats

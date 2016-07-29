@@ -21,13 +21,13 @@ layer {
   }
   data_param {
     source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
-    batch_size: 20
+    batch_size: 5
     backend: LMDB
   }
   annotated_data_param {
     batch_sampler {
     }
-    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText.prototxt"
+    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText_legibleOnly.prototxt"
   }
 }
 layer {
@@ -53,13 +53,13 @@ layer {
   }
   data_param {
     source: "/Users/marissac/data/coco/lmdb/coco_combo_legibleOnly_train2014_final_lmdb"
-    batch_size: 20
+    batch_size: 5
     backend: LMDB
   }
   annotated_data_param {
     batch_sampler {
     }
-    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText.prototxt"
+    label_map_file: "/Users/marissac/caffe/data/coco/labelmap_cocoText_legibleOnly.prototxt"
   }
 }
 layer {
@@ -1600,10 +1600,14 @@ layer {
   top: "gt_word_label"
   top: "conf_label"
   top: "loc_bbox_label"
+  propagate_down: true
+  propagate_down: true
+  propagate_down: false
+  propagate_down: false
   python_param {
     module: "multiboxRoutingLayer"
     layer: "MultiboxRoutingLayer"
-    param_str: "{'max_matches': 15,'overlap_threshold': 0.4}"
+    param_str: "{'max_matches': 1,'overlap_threshold': 0.4}"
   }
 }
 layer {
@@ -1612,6 +1616,9 @@ layer {
   bottom: "pred_bbox"
   bottom: "gt_word_label"
   bottom: "data_pad"
+  propagate_down: true
+  propagate_down: false
+  propagate_down: false
   top: "theta"
   top: "data_grayscale"
   top: "gt_word_label_cut"
@@ -1626,10 +1633,12 @@ layer {
   bottom: "data_grayscale"
   bottom: "theta"
   top: "data_transform"
+  propagate_down: false
+  propagate_down: true
   python_param {
     module: "spatialTransformerMulti"
     layer: "SpatialTransformerMultiLayer"
-    param_str: "{'transform_type': 'affine','sampler_type': 'bilinear', 'output_H': 32, 'output_W':100, 'num_detections':15}"
+    param_str: "{'transform_type': 'affine','sampler_type': 'bilinear', 'output_H': 32, 'output_W':100}"
   }
 }
 layer {

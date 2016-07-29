@@ -19,8 +19,10 @@ class GradientChecker:
         pass
 
     def get_obj_and_gradient(self, layer, top, top_id, top_data_id):
-        for b in top:
-            b.diff[...] = 0
+#        for b in top:
+#            b.diff[...] = 0
+        for b in range(0,len(top)):
+            top[b].diff[...] = 0
         loss_weight = 2
         loss = top[top_id].data.flat[top_data_id] * loss_weight
         top[top_id].diff.flat[top_data_id] = loss_weight
@@ -74,7 +76,8 @@ class GradientChecker:
                 grad = (ploss - nloss) / (2. * step)
                 agrad = ana_grad.flat[fi]
                 feat = blob.data.flat[fi]
-
+                print grad
+                print agrad
                 if self.kink_ - self.kink_range_ > np.abs(feat) \
                         or np.abs(feat) > self.kink_ + self.kink_range_:
                     scale = max(
@@ -95,7 +98,6 @@ class GradientChecker:
         layer.SetUp(bottom, top)
         assert len(top) > 0
         for i in xrange(len(top)):
-        #for i in range(0,1):
             for j in xrange(top[i].count):
                 self.check_gradient_single(
                     layer, bottom, top, check_bottom, i, j)
